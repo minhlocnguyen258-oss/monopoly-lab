@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trùng Sinh, Tôi Làm Tư Bản Độc Quyền</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050a14;--bg2:#0a1628;--bg3:#0f1e38;
+  --cyan:#00c8ff;--purple:#7b2fff;--gold:#ffd700;
+  --green:#00ff88;--red:#ff4466;--orange:#ff8c00;
+  --glass:rgba(255,255,255,0.04);--glass2:rgba(255,255,255,0.08);
+  --border:rgba(255,255,255,0.08);--border2:rgba(0,200,255,0.2);
+}
+html,body{height:100%;background:var(--bg);color:#e0e8f0;font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden}
+canvas#particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.5}
+.screen{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(7,15,30,0.95) 0%,rgba(5,10,20,0.99) 100%)}
+.screen.hidden{display:none}
+/* ===START SCREEN=== */
+#start-screen{flex-direction:column;text-align:center;gap:24px}
+.game-title{font-size:clamp(1.6rem,4vw,3rem);font-weight:900;background:linear-gradient(135deg,var(--cyan),var(--purple),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:2px;line-height:1.2;text-shadow:none;filter:drop-shadow(0 0 30px rgba(0,200,255,0.3))}
+.game-sub{color:rgba(255,255,255,0.5);font-size:.9rem;letter-spacing:4px;text-transform:uppercase;margin-top:-8px}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--purple));border:none;color:#fff;font-size:1.1rem;font-weight:700;padding:14px 48px;border-radius:50px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:all .3s;box-shadow:0 0 30px rgba(0,200,255,0.3)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(0,200,255,0.5)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+.sound-toggle{position:fixed;bottom:16px;left:16px;z-index:1200;border:1px solid rgba(0,200,255,0.25);background:rgba(5,10,20,0.78);color:#d9f6ff;padding:10px 14px;border-radius:999px;cursor:pointer;font-size:.78rem;font-weight:700;backdrop-filter:blur(10px);box-shadow:0 8px 30px rgba(0,0,0,0.28);transition:all .25s}
+.sound-toggle:hover{transform:translateY(-1px);border-color:rgba(0,200,255,0.5);box-shadow:0 10px 35px rgba(0,200,255,0.12)}
+.sound-toggle.muted{opacity:.72;border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.72)}
+/* ===SETUP SCREEN=== */
+#setup-screen{flex-direction:column;justify-content:center;align-items:center;gap:20px;width:100%;max-height:100vh;overflow-y:auto;padding:32px 24px}
+#setup-screen .setup-shell{width:min(800px,100%);margin:auto}
+.setup-title{font-size:1.6rem;font-weight:800;background:linear-gradient(90deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center}
+.setup-section{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:20px;backdrop-filter:blur(10px)}
+.setup-section h3{font-size:.8rem;text-transform:uppercase;letter-spacing:3px;color:var(--cyan);margin-bottom:14px}
+.company-input{width:100%;background:rgba(0,200,255,0.07);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;color:#fff;font-size:1rem;outline:none;transition:.3s}
+.company-input:focus{border-color:var(--cyan);box-shadow:0 0 20px rgba(0,200,255,0.15)}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.choice-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px 10px;cursor:pointer;text-align:center;transition:all .25s;position:relative}
+.choice-card:hover{background:var(--glass2);border-color:rgba(0,200,255,0.3)}
+.choice-card.selected{background:rgba(0,200,255,0.1);border-color:var(--cyan);box-shadow:0 0 20px rgba(0,200,255,0.2)}
+.choice-card .icon{font-size:1.6rem;margin-bottom:6px}
+.choice-card .name{font-size:.85rem;font-weight:700;color:#e0e8f0;margin-bottom:4px}
+.choice-card .desc{font-size:.7rem;color:rgba(255,255,255,0.45)}
+/* ===GAME SCREEN=== */
+#game-screen{display:none;position:fixed;inset:0;z-index:5;flex-direction:column;background:transparent}
+#game-screen.active{display:flex}
+.game-header{background:rgba(5,10,20,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:10px 20px;display:grid;grid-template-columns:minmax(120px,max-content) minmax(0,1fr) auto;align-items:center;gap:16px;flex-shrink:0;z-index:10}
+.header-title{font-size:1rem;font-weight:800;background:linear-gradient(90deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;min-width:0}
+.header-meta{display:flex;align-items:center;justify-self:end;gap:16px;font-size:.8rem;flex-shrink:0}
+.year-badge{background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,215,0,0.05));border:1px solid rgba(255,215,0,0.3);border-radius:20px;padding:4px 14px;color:var(--gold);font-weight:800;font-size:.9rem}
+.risk-badge{border-radius:20px;padding:4px 12px;font-weight:700;font-size:.75rem;transition:all .5s}
+.risk-stable{background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);color:var(--green)}
+.risk-watch{background:rgba(255,200,0,0.1);border:1px solid rgba(255,200,0,0.3);color:#ffc800}
+.risk-pressure{background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.3);color:var(--orange)}
+.risk-danger{background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.3);color:var(--red)}
+.risk-crisis{background:rgba(255,0,50,0.2);border:1px solid var(--red);color:#ff2244;animation:pulsed .8s infinite}
+@keyframes pulsed{0%,100%{box-shadow:0 0 8px rgba(255,68,102,0.3)}50%{box-shadow:0 0 20px rgba(255,68,102,0.8)}}
+.news-ticker{font-size:.72rem;color:rgba(255,255,255,0.4);min-width:0;width:100%;text-align:center;line-height:1.35;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.game-body{flex:1;display:grid;grid-template-columns:260px 1fr 240px;gap:0;overflow:hidden}
+/* ===LEFT SIDEBAR=== */
+.sidebar-left{background:rgba(5,10,20,0.7);border-right:1px solid var(--border);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;backdrop-filter:blur(10px)}
+.stat-group{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px}
+.stat-group-title{font-size:.7rem;text-transform:uppercase;letter-spacing:3px;color:var(--cyan);margin-bottom:12px;opacity:.8}
+.stat-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.stat-row:last-child{margin-bottom:0}
+.stat-label{font-size:.75rem;color:rgba(255,255,255,0.5)}
+.stat-val{font-size:.9rem;font-weight:700;color:#e0e8f0}
+.stat-bar-wrap{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:4px;overflow:hidden}
+.stat-bar{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.bar-ms{background:linear-gradient(90deg,var(--cyan),var(--purple))}
+.bar-rep{background:linear-gradient(90deg,#00ff88,#00c8ff)}
+.bar-pol{background:linear-gradient(90deg,#ff8c00,#ff4466)}
+.bar-tech{background:linear-gradient(90deg,#7b2fff,#00c8ff)}
+.intervention-display{background:rgba(255,68,102,0.07);border:1px solid rgba(255,68,102,0.2);border-radius:10px;padding:10px 12px}
+.intervention-label{font-size:.7rem;text-transform:uppercase;letter-spacing:2px;color:rgba(255,100,120,0.7);margin-bottom:8px}
+.stage-dots{display:flex;gap:6px;align-items:center}
+.stage-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);transition:all .5s}
+.stage-dot.active{background:var(--red);border-color:var(--red);box-shadow:0 0 10px rgba(255,68,102,0.5)}
+.sector-badge{background:rgba(123,47,255,0.1);border:1px solid rgba(123,47,255,0.25);border-radius:8px;padding:8px 12px;font-size:.75rem;color:rgba(200,180,255,0.8);text-align:center}
+/* ===CENTER=== */
+.center-panel{display:flex;flex-direction:column;overflow-y:auto;padding:16px;gap:14px;background:rgba(5,10,20,0.3);position:relative;scroll-behavior:smooth}
+.panel-title{font-size:.75rem;text-transform:uppercase;letter-spacing:3px;color:rgba(255,255,255,0.4);margin-bottom:10px}
+.actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.action-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.action-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,200,255,0),rgba(0,200,255,0));transition:.3s;border-radius:14px}
+.action-card:hover:not(.disabled){background:var(--glass2);border-color:rgba(0,200,255,0.35);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,200,255,0.1)}
+.action-card.disabled{opacity:.35;cursor:not-allowed}
+.action-card.selected{border-color:var(--cyan);background:rgba(0,200,255,0.08);box-shadow:0 0 25px rgba(0,200,255,0.15)}
+.action-icon{font-size:1.5rem;margin-bottom:8px}
+.action-name{font-size:.85rem;font-weight:700;color:#e0e8f0;margin-bottom:4px}
+.action-cost{font-size:.7rem;color:var(--orange);margin-bottom:6px}
+.action-desc{font-size:.7rem;color:rgba(255,255,255,0.45);line-height:1.5}
+/* ===FORECAST=== */
+.forecast-panel{background:rgba(0,200,255,0.04);border:1px solid rgba(0,200,255,0.15);border-radius:14px;padding:16px;animation:slideUp .3s ease;box-shadow:0 10px 30px rgba(0,0,0,0.28)}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.forecast-title{font-size:.75rem;text-transform:uppercase;letter-spacing:3px;color:var(--cyan);margin-bottom:12px}
+.forecast-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.forecast-item{background:rgba(0,0,0,0.2);border-radius:8px;padding:8px;text-align:center}
+.forecast-item .fi-label{font-size:.65rem;color:rgba(255,255,255,0.4);margin-bottom:4px}
+.forecast-item .fi-val{font-size:.85rem;font-weight:700}
+.fi-pos{color:var(--green)}
+.fi-neg{color:var(--red)}
+.fi-neu{color:rgba(255,255,255,0.6)}
+.confirm-btn{width:100%;background:linear-gradient(135deg,var(--cyan),var(--purple));border:none;color:#fff;font-size:.9rem;font-weight:700;padding:12px;border-radius:10px;cursor:pointer;letter-spacing:1px;margin-top:12px;transition:all .3s;text-transform:uppercase}
+.confirm-btn:hover{transform:translateY(-1px);box-shadow:0 8px 25px rgba(0,200,255,0.3)}
+/* ===RIGHT SIDEBAR=== */
+.sidebar-right{background:rgba(5,10,20,0.7);border-left:1px solid var(--border);padding:14px;overflow-y:auto;backdrop-filter:blur(10px)}
+.log-title{font-size:.7rem;text-transform:uppercase;letter-spacing:3px;color:rgba(255,255,255,0.4);margin-bottom:12px}
+.log-entry{padding:8px 10px;border-radius:8px;margin-bottom:6px;font-size:.72rem;line-height:1.5;animation:fadeInLog .3s ease}
+@keyframes fadeInLog{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+.log-normal{background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.55)}
+.log-good{background:rgba(0,255,136,0.06);color:rgba(0,255,136,0.8);border-left:2px solid rgba(0,255,136,0.3)}
+.log-bad{background:rgba(255,68,102,0.06);color:rgba(255,68,102,0.8);border-left:2px solid rgba(255,68,102,0.3)}
+.log-warn{background:rgba(255,140,0,0.06);color:rgba(255,140,0,0.8);border-left:2px solid rgba(255,140,0,0.3)}
+.log-event{background:rgba(123,47,255,0.06);color:rgba(200,180,255,0.85);border-left:2px solid rgba(123,47,255,0.4)}
+.log-milestone{background:rgba(255,215,0,0.07);color:rgba(255,215,0,0.9);border-left:2px solid rgba(255,215,0,0.4);font-weight:700}
+/* ===MODAL=== */
+.modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,5,15,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-box{background:linear-gradient(135deg,#0a1628,#0d1f3a);border:1px solid var(--border2);border-radius:20px;padding:28px;max-width:600px;width:90%;max-height:85vh;overflow-y:auto;transform:scale(0.9);transition:transform .3s;box-shadow:0 30px 80px rgba(0,0,0,0.8),0 0 60px rgba(0,200,255,0.05)}
+.modal-overlay.show .modal-box{transform:scale(1)}
+.modal-title{font-size:1.1rem;font-weight:800;margin-bottom:6px;background:linear-gradient(90deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.modal-sub{font-size:.8rem;color:rgba(255,255,255,0.4);margin-bottom:20px;letter-spacing:1px}
+.quiz-q{font-size:.9rem;line-height:1.7;color:#c8d8e8;background:rgba(0,0,0,0.2);border-radius:10px;padding:14px;margin-bottom:16px}
+.quiz-opts{display:flex;flex-direction:column;gap:8px}
+.quiz-opt{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;cursor:pointer;font-size:.82rem;color:#c8d8e8;transition:all .2s;text-align:left;line-height:1.5}
+.quiz-opt:hover:not(:disabled){background:rgba(0,200,255,0.08);border-color:rgba(0,200,255,0.3)}
+.quiz-opt.correct{background:rgba(0,255,136,0.1);border-color:var(--green);color:var(--green)}
+.quiz-opt.wrong{background:rgba(255,68,102,0.1);border-color:var(--red);color:var(--red)}
+.quiz-opt:disabled{cursor:default}
+.quiz-explanation{background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;font-size:.8rem;color:rgba(200,220,240,0.75);line-height:1.6;margin-top:12px;border-left:3px solid var(--cyan)}
+.quiz-result{text-align:center;padding:12px;border-radius:10px;font-size:.85rem;font-weight:700;margin-top:10px}
+.quiz-result.win{background:rgba(0,255,136,0.1);color:var(--green);border:1px solid rgba(0,255,136,0.25)}
+.quiz-result.lose{background:rgba(255,68,102,0.1);color:var(--red);border:1px solid rgba(255,68,102,0.25)}
+.modal-btn{background:linear-gradient(135deg,var(--cyan),var(--purple));border:none;color:#fff;font-size:.85rem;font-weight:700;padding:11px 32px;border-radius:50px;cursor:pointer;margin-top:14px;transition:.3s;letter-spacing:1px}
+.modal-btn:hover{transform:translateY(-1px);box-shadow:0 8px 25px rgba(0,200,255,0.3)}
+/* ===EVENT MODAL=== */
+.event-icon{font-size:3rem;text-align:center;margin-bottom:12px;filter:drop-shadow(0 0 20px rgba(0,200,255,0.5))}
+.event-name{font-size:1.2rem;font-weight:900;text-align:center;margin-bottom:8px;color:#e0e8f0}
+.event-desc{font-size:.85rem;color:rgba(200,220,240,0.7);text-align:center;line-height:1.7;margin-bottom:16px}
+.event-effects{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.eff-chip{background:rgba(0,0,0,0.2);border-radius:8px;padding:8px;text-align:center}
+.eff-chip .el{font-size:.65rem;color:rgba(255,255,255,0.4);margin-bottom:2px}
+.eff-chip .ev{font-size:.85rem;font-weight:700}
+/* ===ENDING MODAL=== */
+.ending-box{max-width:520px}
+.ending-icon{font-size:4rem;text-align:center;margin-bottom:16px}
+.ending-title{font-size:1.5rem;font-weight:900;text-align:center;margin-bottom:8px}
+.ending-desc{font-size:.85rem;color:rgba(200,220,240,0.7);text-align:center;line-height:1.7;margin-bottom:20px}
+.ending-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.ending-stat{background:rgba(0,0,0,0.2);border-radius:10px;padding:10px;text-align:center}
+.es-label{font-size:.65rem;color:rgba(255,255,255,0.4);margin-bottom:4px}
+.es-val{font-size:1rem;font-weight:700;color:#e0e8f0}
+.ending-win{color:var(--gold)}
+.ending-lose{color:var(--red)}
+/* ===TOAST=== */
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:1000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:rgba(10,22,40,0.95);border:1px solid var(--border2);border-radius:10px;padding:10px 16px;font-size:.78rem;color:#c8d8e8;backdrop-filter:blur(10px);animation:toastIn .3s ease forwards;min-width:200px;max-width:280px;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,0.5)}
+.toast.good{border-color:rgba(0,255,136,0.3);color:var(--green)}
+.toast.bad{border-color:rgba(255,68,102,0.3);color:var(--red)}
+.toast.warn{border-color:rgba(255,140,0,0.3);color:var(--orange)}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(30px)}}
+/* ===RESPONSIVE=== */
+@media(max-width:900px){
+  .game-header{grid-template-columns:1fr auto;grid-template-areas:'title meta' 'ticker ticker';align-items:start}
+  .header-title{grid-area:title}
+  .header-meta{grid-area:meta}
+  .news-ticker{grid-area:ticker;text-align:left;padding-top:2px}
+  .game-body{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}
+  .sidebar-left,.sidebar-right{max-height:200px}
+  .actions-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .grid-5{grid-template-columns:1fr 1fr}
+  .forecast-grid{grid-template-columns:1fr 1fr}
+  .event-effects{grid-template-columns:1fr 1fr}
+}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(0,200,255,0.2);border-radius:2px}
+</style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+<button id="sound-toggle" class="sound-toggle" onclick="toggleSound()" title="Bật hoặc tắt toàn bộ âm thanh và nhạc nền">🔊 Âm: Bật</button>
+
+<!-- START SCREEN -->
+<div id="start-screen" class="screen">
+  <div style="font-size:3rem;margin-bottom:-8px">🏭</div>
+  <div class="game-title">Trùng Sinh, Tôi Làm<br>Tư Bản Độc Quyền</div>
+  <div class="game-sub">TRẢI NGHIỆM THỰC TẾ, CỦNG CỐ KIẾN THỨC</div>
+  <div style="max-width:400px;font-size:.8rem;color:rgba(255,255,255,0.35);line-height:1.8;text-align:center">
+    Trò chơi chỉ mang tính chất giáo dục, không nhằm mục đích cổ xúy bất kỳ hành vi kinh doanh, sản xuất bất chính nào.
+  </div>
+  <button class="btn-primary" onclick="showSetup()">BẮT ĐẦU TRẢI NGHIỆM</button>
+</div>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen" class="screen hidden">
+  <div class="setup-shell">
+    <div class="setup-title" style="margin-bottom:20px">🏗️ Thiết lập sự nghiệp</div>
+    <div class="setup-section">
+      <h3>Tên công ty</h3>
+      <input type="text" class="company-input" id="company-name" placeholder="Nhập tên công ty của bạn..." maxlength="100%" oninput="checkSetupReady()">
+    </div>
+    <div class="setup-section" style="margin-top:14px">
+      <h3>Lĩnh vực hoạt động</h3>
+      <div class="grid-5" id="sector-grid"></div>
+    </div>
+    <div class="setup-section" style="margin-top:14px">
+      <h3>Chế độ chơi</h3>
+      <div class="grid-3" id="mode-grid"></div>
+    </div>
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn-primary" id="play-btn" onclick="startGame()" disabled>⚡ KHỞI ĐẦU SỰ NGHIỆP</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen">
+  <div class="game-header">
+    <div class="header-title" id="header-company">COMPANY</div>
+    <div class="news-ticker" id="news-ticker">Thị trường đang theo dõi...</div>
+    <div class="header-meta">
+      <span class="year-badge" id="year-badge">2026</span>
+      <span class="risk-badge risk-stable" id="risk-badge">Ổn định</span>
+    </div>
+  </div>
+  <div class="game-body">
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar-left">
+      <div class="sector-badge" id="sector-badge">Lĩnh vực</div>
+      <div class="stat-group">
+        <div class="stat-group-title">Tài chính</div>
+        <div class="stat-row"><span class="stat-label">💰 Vốn</span><span class="stat-val" id="stat-capital">120</span></div>
+        <div class="stat-row"><span class="stat-label">💳 Nợ</span><span class="stat-val" id="stat-debt">0</span></div>
+        <div class="stat-row"><span class="stat-label">📊 Nợ/Vốn</span><span class="stat-val" id="stat-ratio">0.0</span></div>
+      </div>
+      <div class="stat-group">
+        <div class="stat-group-title">Thị trường</div>
+        <div class="stat-row"><span class="stat-label">📈 Thị phần</span><span class="stat-val" id="stat-ms">10%</span></div>
+        <div class="stat-bar-wrap"><div class="stat-bar bar-ms" id="bar-ms" style="width:10%"></div></div>
+        <div style="margin-top:10px"></div>
+        <div class="stat-row"><span class="stat-label">⭐ Uy tín</span><span class="stat-val" id="stat-rep">55</span></div>
+        <div class="stat-bar-wrap"><div class="stat-bar bar-rep" id="bar-rep" style="width:55%"></div></div>
+      </div>
+      <div class="stat-group">
+        <div class="stat-group-title">Năng lực</div>
+        <div class="stat-row"><span class="stat-label">🔬 Công nghệ</span><span class="stat-val" id="stat-tech">0</span></div>
+        <div class="stat-bar-wrap"><div class="stat-bar bar-tech" id="bar-tech" style="width:0%"></div></div>
+        <div style="margin-top:10px"></div>
+        <div class="stat-row"><span class="stat-label">🌫️ Ô nhiễm</span><span class="stat-val" id="stat-pol">0</span></div>
+        <div class="stat-bar-wrap"><div class="stat-bar bar-pol" id="bar-pol" style="width:0%"></div></div>
+        <div style="margin-top:10px"></div>
+        <div class="stat-row"><span class="stat-label">🤝 Ảnh hưởng</span><span class="stat-val" id="stat-inf">5</span></div>
+      </div>
+      <div class="intervention-display">
+        <div class="intervention-label">Can thiệp nhà nước</div>
+        <div class="stage-dots" id="stage-dots"></div>
+        <div style="font-size:.7rem;color:rgba(255,100,120,0.6);margin-top:6px" id="stage-label">Giai đoạn 0</div>
+      </div>
+    </div>
+    <!-- CENTER -->
+    <div class="center-panel">
+      <div>
+        <div class="panel-title">Chọn hành động năm này</div>
+        <div class="actions-grid" id="actions-grid"></div>
+      </div>
+      <div id="forecast-panel" class="forecast-panel" style="display:none"></div>
+    </div>
+    <!-- RIGHT SIDEBAR -->
+    <div class="sidebar-right">
+      <div class="log-title">Nhật ký sự kiện</div>
+      <div id="log-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ MODAL -->
+<div class="modal-overlay" id="quiz-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="quiz-modal-title">Câu hỏi kiến thức</div>
+    <div class="modal-sub" id="quiz-modal-sub"></div>
+    <div class="quiz-q" id="quiz-q"></div>
+    <div class="quiz-opts" id="quiz-opts"></div>
+    <div id="quiz-explanation" style="display:none" class="quiz-explanation"></div>
+    <div id="quiz-result" style="display:none" class="quiz-result"></div>
+    <button class="modal-btn" id="quiz-continue-btn" style="display:none" onclick="resolveQuiz()">Tiếp tục →</button>
+  </div>
+</div>
+
+<!-- EVENT MODAL -->
+<div class="modal-overlay" id="event-modal">
+  <div class="modal-box">
+    <div class="event-icon" id="event-icon"></div>
+    <div class="event-name" id="event-name"></div>
+    <div class="event-desc" id="event-desc"></div>
+    <div class="event-effects" id="event-effects"></div>
+    <div style="text-align:center">
+      <button class="modal-btn" onclick="closeEventModal()">Tiếp tục →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ENDING MODAL -->
+<div class="modal-overlay" id="ending-modal">
+  <div class="modal-box ending-box">
+    <div class="ending-icon" id="ending-icon"></div>
+    <div class="ending-title" id="ending-title"></div>
+    <div class="ending-desc" id="ending-desc"></div>
+    <div class="ending-stats" id="ending-stats"></div>
+    <div style="text-align:center">
+      <button class="modal-btn" onclick="location.reload()">🔄 Chơi lại</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script>
+// ============================================================
+// PARTICLES
+// ============================================================
+(function(){
+  const canvas=document.getElementById('particles');
+  const ctx=canvas.getContext('2d');
+  let W,H,pts=[];
+  function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;init()}
+  function init(){pts=[];for(let i=0;i<80;i++)pts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,r:Math.random()*1.5+.5,a:Math.random()})}
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(0,200,255,${p.a*.3})`;ctx.fill();
+    });
+    for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+      const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<100){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(0,200,255,${(1-d/100)*.05})`;ctx.stroke()}
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',resize);resize();draw();
+})();
+
+// ============================================================
+// SOUND FX (Web Audio API, no external files)
+// ============================================================
+const SFX={
+  enabled:(()=>{
+    try{return localStorage.getItem('monopolyGameSfx')!=='off';}
+    catch(_){return true;}
+  })(),
+  ctx:null,
+  master:null
+};
+
+function ensureAudio(){
+  try{
+    const AudioCtx=window.AudioContext||window.webkitAudioContext;
+    if(!AudioCtx)return null;
+    if(!SFX.ctx){
+      SFX.ctx=new AudioCtx();
+      SFX.master=SFX.ctx.createGain();
+      SFX.master.gain.value=0.225;
+      SFX.master.connect(SFX.ctx.destination);
+    }
+    if(SFX.ctx.state==='suspended')SFX.ctx.resume();
+    return SFX.ctx;
+  }catch(_){
+    return null;
+  }
+}
+
+function updateSoundToggleUI(){
+  const btn=document.getElementById('sound-toggle');
+  if(!btn)return;
+  btn.textContent=SFX.enabled?'🔊 Âm: Bật':'🔇 Âm: Tắt';
+  btn.classList.toggle('muted',!SFX.enabled);
+}
+
+const MUSIC={
+  initialized:false,
+  currentKey:null,
+  currentAudio:null,
+  tracks:{},
+  phaseTrackMap:{
+    stable:'stableTrack',
+    watch:'watchPressureTrack',
+    pressure:'watchPressureTrack',
+    danger:'dangerCrisisTrack',
+    crisis:'dangerCrisisTrack'
+  },
+  trackDefs:{
+    stableTrack:{src:'phase_stable_xskt.mp3',volume:0.35},
+    watchPressureTrack:{src:'phase_watch_pressure.mp3',volume:0.385},
+    dangerCrisisTrack:{src:'phase_danger_crisis.mp3',volume:0.413}
+  }
+};
+
+function initMusic(){
+  if(MUSIC.initialized)return;
+  Object.entries(MUSIC.trackDefs).forEach(([key,def])=>{
+    const audio=new Audio(def.src);
+    audio.loop=true;
+    audio.preload='auto';
+    audio.volume=0;
+    MUSIC.tracks[key]=audio;
+  });
+  MUSIC.initialized=true;
+}
+
+function getRiskPhaseKey(risk){
+  if(risk>=8)return'crisis';
+  if(risk>=6)return'danger';
+  if(risk>=4)return'pressure';
+  if(risk>=2.5)return'watch';
+  return'stable';
+}
+
+function fadeAudioVolume(audio,targetVolume,duration=700,onDone=null){
+  if(!audio)return;
+  const startVolume=Number.isFinite(audio.volume)?audio.volume:0;
+  const startTime=performance.now();
+  if(audio.__fadeFrame)cancelAnimationFrame(audio.__fadeFrame);
+
+  const step=(now)=>{
+    const progress=Math.min(1,(now-startTime)/duration);
+    audio.volume=startVolume+(targetVolume-startVolume)*progress;
+    if(progress<1){
+      audio.__fadeFrame=requestAnimationFrame(step);
+    }else{
+      audio.__fadeFrame=null;
+      audio.volume=targetVolume;
+      if(typeof onDone==='function')onDone();
+    }
+  };
+  audio.__fadeFrame=requestAnimationFrame(step);
+}
+
+function stopMusic(immediate=false){
+  if(!MUSIC.currentAudio)return;
+  const current=MUSIC.currentAudio;
+  const finish=()=>{
+    try{current.pause();}catch(_){}
+    current.currentTime=0;
+  };
+  if(immediate){
+    if(current.__fadeFrame)cancelAnimationFrame(current.__fadeFrame);
+    current.volume=0;
+    finish();
+  }else{
+    fadeAudioVolume(current,0,450,finish);
+  }
+  MUSIC.currentAudio=null;
+  MUSIC.currentKey=null;
+}
+
+async function playMusicForPhase(phase){
+  initMusic();
+  if(!SFX.enabled){
+    stopMusic(true);
+    return;
+  }
+  const trackKey=MUSIC.phaseTrackMap[phase];
+  if(!trackKey)return;
+  if(MUSIC.currentKey===trackKey && MUSIC.currentAudio){
+    const active=MUSIC.currentAudio;
+    if(active.paused){
+      try{await active.play();}catch(_){}
+    }
+    fadeAudioVolume(active,MUSIC.trackDefs[trackKey].volume,500);
+    return;
+  }
+
+  const nextAudio=MUSIC.tracks[trackKey];
+  const previousAudio=MUSIC.currentAudio;
+  MUSIC.currentKey=trackKey;
+  MUSIC.currentAudio=nextAudio;
+
+  if(previousAudio && previousAudio!==nextAudio){
+    fadeAudioVolume(previousAudio,0,500,()=>{
+      try{previousAudio.pause();}catch(_){}
+      previousAudio.currentTime=0;
+    });
+  }
+
+  try{
+    nextAudio.currentTime=0;
+    nextAudio.volume=0;
+    await nextAudio.play();
+    fadeAudioVolume(nextAudio,MUSIC.trackDefs[trackKey].volume,650);
+  }catch(_){
+    if(MUSIC.currentAudio===nextAudio){
+      MUSIC.currentAudio=null;
+      MUSIC.currentKey=null;
+    }
+  }
+}
+
+function syncMusicToCurrentPhase(){
+  if(!document.getElementById('game-screen')?.classList.contains('active')||!G||G.over)return;
+  playMusicForPhase(getRiskPhaseKey(G.risk||0));
+}
+
+function toggleSound(){
+  SFX.enabled=!SFX.enabled;
+  try{localStorage.setItem('monopolyGameSfx',SFX.enabled?'on':'off');}catch(_){}
+  updateSoundToggleUI();
+  if(SFX.enabled){
+    ensureAudio();
+    initMusic();
+    playSfx('toggleOn');
+    syncMusicToCurrentPhase();
+  }else{
+    stopMusic(true);
+  }
+}
+
+function tone(freq,start,duration=0.08,type='sine',gain=0.5,slideTo=null){
+  const ctx=ensureAudio();
+  if(!ctx||!SFX.enabled)return;
+  const osc=ctx.createOscillator();
+  const g=ctx.createGain();
+  osc.type=type;
+  osc.frequency.setValueAtTime(freq,start);
+  if(slideTo!==null)osc.frequency.exponentialRampToValueAtTime(Math.max(1,slideTo),start+duration);
+  g.gain.setValueAtTime(0.0001,start);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0001,gain),start+0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001,start+duration);
+  osc.connect(g);
+  g.connect(SFX.master);
+  osc.start(start);
+  osc.stop(start+duration+0.02);
+}
+
+function pingSeries(notes,step=0.06,opts={}){
+  const ctx=ensureAudio();
+  if(!ctx||!SFX.enabled)return;
+  const now=ctx.currentTime+0.01;
+  notes.forEach((n,i)=>{
+    tone(
+      n,
+      now+i*step,
+      opts.duration??0.08,
+      opts.type??'triangle',
+      opts.gain??0.34,
+      opts.slide!==undefined?(Array.isArray(opts.slide)?opts.slide[i]??opts.slide[opts.slide.length-1]:opts.slide):null
+    );
+  });
+}
+
+function playSfx(name){
+  if(!SFX.enabled)return;
+  const ctx=ensureAudio();
+  if(!ctx)return;
+  switch(name){
+    case 'click':
+      pingSeries([840,1120],0.045,{duration:0.05,type:'triangle',gain:0.25});
+      break;
+    case 'select':
+      pingSeries([600,760],0.04,{duration:0.06,type:'sine',gain:0.23});
+      break;
+    case 'toggleOn':
+      pingSeries([660,880,1180],0.04,{duration:0.06,type:'sine',gain:0.24});
+      break;
+    case 'start':
+      pingSeries([392,523,659,784],0.07,{duration:0.13,type:'triangle',gain:0.2});
+      break;
+    case 'confirm':
+      pingSeries([520,700,920],0.05,{duration:0.08,type:'triangle',gain:0.28});
+      break;
+    case 'rd':
+      pingSeries([520,660,880],0.05,{duration:0.09,type:'sine',gain:0.2});
+      break;
+    case 'price':
+      pingSeries([680,520,420],0.055,{duration:0.09,type:'sawtooth',gain:0.12});
+      break;
+    case 'acquire':
+      pingSeries([220,280,360],0.075,{duration:0.13,type:'square',gain:0.09});
+      break;
+    case 'green':
+      pingSeries([440,660,990],0.07,{duration:0.12,type:'sine',gain:0.17});
+      break;
+    case 'lobby':
+      pingSeries([330,415,370],0.06,{duration:0.1,type:'triangle',gain:0.14});
+      break;
+    case 'borrow':
+      pingSeries([300,450,620],0.05,{duration:0.08,type:'square',gain:0.1});
+      break;
+    case 'repay':
+      pingSeries([760,620,520],0.05,{duration:0.08,type:'triangle',gain:0.12});
+      break;
+    case 'quizOpen':
+      pingSeries([480,620],0.07,{duration:0.1,type:'triangle',gain:0.14});
+      break;
+    case 'correct':
+      pingSeries([660,880,1100],0.055,{duration:0.11,type:'sine',gain:0.2});
+      break;
+    case 'wrong':
+      pingSeries([420,320,220],0.06,{duration:0.12,type:'sawtooth',gain:0.12});
+      break;
+    case 'event':
+      pingSeries([523,659,784],0.06,{duration:0.11,type:'triangle',gain:0.18});
+      break;
+    case 'alert':
+      pingSeries([280,240,190],0.08,{duration:0.15,type:'sawtooth',gain:0.11});
+      break;
+    case 'modalClose':
+      pingSeries([900,700],0.04,{duration:0.05,type:'triangle',gain:0.16});
+      break;
+    case 'year':
+      pingSeries([500,640],0.08,{duration:0.09,type:'triangle',gain:0.12});
+      break;
+    case 'win':
+      pingSeries([523,659,784,1046],0.07,{duration:0.16,type:'triangle',gain:0.22});
+      break;
+    case 'lose':
+      pingSeries([392,294,220,165],0.08,{duration:0.16,type:'sawtooth',gain:0.1});
+      break;
+    case 'neutralEnd':
+      pingSeries([440,554,494],0.07,{duration:0.12,type:'triangle',gain:0.14});
+      break;
+  }
+}
+
+document.addEventListener('pointerdown',()=>{ensureAudio();initMusic();updateSoundToggleUI();},{once:true});
+document.addEventListener('keydown',()=>{ensureAudio();initMusic();updateSoundToggleUI();},{once:true});
+updateSoundToggleUI();
+
+
+// ============================================================
+// DATA
+// ============================================================
+const SECTORS=[
+  {id:'tech',name:'Công nghệ',icon:'💻',desc:'R&D nhanh, độc quyền cao',rdBonus:1.5,acquisitionBonus:1.0,greenBonus:1.0,lobbyBonus:1.0,basePollution:5,antitrustSensitivity:1.3},
+  {id:'energy',name:'Năng lượng',icon:'⚡',desc:'Ô nhiễm cao, tăng trưởng ổn định',rdBonus:1.0,acquisitionBonus:1.1,greenBonus:1.6,lobbyBonus:1.1,basePollution:32,antitrustSensitivity:1.1},
+  {id:'finance',name:'Tài chính',icon:'🏦',desc:'Vận động hành lang mạnh, ít ô nhiễm',rdBonus:0.8,acquisitionBonus:1.2,greenBonus:0.9,lobbyBonus:1.5,basePollution:3,antitrustSensitivity:1.0},
+  {id:'mfg',name:'Sản xuất',icon:'🏭',desc:'Thâu tóm và sáp nhập hiệu quả, ô nhiễm cao',rdBonus:1.0,acquisitionBonus:1.3,greenBonus:1.1,lobbyBonus:1.0,basePollution:22,antitrustSensitivity:1.0},
+  {id:'platform',name:'Nền tảng số',icon:'📱',desc:'Thâu tóm và sáp nhập nhanh, nhạy cảm nhất',rdBonus:1.2,acquisitionBonus:1.4,greenBonus:0.9,lobbyBonus:1.1,basePollution:5,antitrustSensitivity:1.5}
+];
+const MODES=[
+  {id:'standard',name:'Tiêu chuẩn',icon:'⚖️',desc:'Cân bằng rủi ro và tăng trưởng',growthMult:1.0,riskMult:1.0,interventionThresholdMult:1.0},
+  {id:'aggressive',name:'Thôn tính mạnh mẽ',icon:'⚔️',desc:'Tăng trưởng nhanh, rủi ro cao',growthMult:1.2,riskMult:1.3,interventionThresholdMult:0.85},
+  {id:'regulated',name:'Quy định chặt chẽ',icon:'📋',desc:'Tăng trưởng chậm, chính phủ can thiệp sớm',growthMult:0.85,riskMult:1.15,interventionThresholdMult:0.75}
+];
+const QUIZ_BANK=[
+  {category:"rd",q:"Theo kinh tế chính trị Mác – Lênin, vì sao trong giai đoạn độc quyền, các doanh nghiệp lớn có xu hướng đầu tư mạnh vào nghiên cứu và đổi mới công nghệ?",opts:["Vì họ muốn giảm vai trò của tư bản","Vì họ muốn duy trì lợi thế cạnh tranh và thu lợi nhuận độc quyền cao","Vì nhà nước bắt buộc mọi doanh nghiệp phải đầu tư như nhau","Vì công nghệ làm mất hoàn toàn cạnh tranh"],correct:1,explanation:"Trong giai đoạn độc quyền, lợi nhuận độc quyền cao hơn lợi nhuận bình quân, nên doanh nghiệp đầu tư vào công nghệ để duy trì khoảng cách với đối thủ."},
+  {category:"rd",q:"Đổi mới công nghệ có thể làm tăng năng lực cạnh tranh của doanh nghiệp chủ yếu bằng cách nào?",opts:["Tăng chi phí sản xuất","Giảm năng suất lao động","Hạ chi phí, nâng chất lượng sản phẩm và mở rộng thị phần","Xóa bỏ hoàn toàn vai trò của thị trường"],correct:2,explanation:"Công nghệ giúp giảm chi phí và nâng chất lượng, từ đó doanh nghiệp có lợi thế giá và chất lượng để chiếm thị phần."},
+  {category:"rd",q:"Khi một doanh nghiệp nắm giữ công nghệ lõi vượt trội, điều đó có thể dẫn đến hình thức nào?",opts:["Độc quyền công nghệ","Cạnh tranh hoàn hảo","Sản xuất phi hàng hóa","Phân phối bình quân chủ nghĩa"],correct:0,explanation:"Công nghệ lõi vượt trội tạo ra hàng rào gia nhập, dẫn đến độc quyền công nghệ."},
+  {category:"rd",q:"Tại sao bằng sáng chế và bí quyết công nghệ có thể trở thành công cụ duy trì vị thế độc quyền?",opts:["Vì chúng làm cho mọi doanh nghiệp đều tiếp cận công nghệ như nhau","Vì chúng ngăn cản hoặc hạn chế đối thủ sao chép, từ đó tạo rào cản gia nhập","Vì chúng làm giá cả hàng hóa giảm về 0","Vì chúng xóa bỏ quy luật giá trị"],correct:1,explanation:"Bằng sáng chế tạo ra quyền độc quyền sử dụng công nghệ, ngăn đối thủ sao chép trong thời hạn bảo hộ."},
+  {category:"rd",q:"Trong điều kiện cạnh tranh gay gắt, doanh nghiệp đổi mới công nghệ nhằm mục tiêu chủ yếu nào?",opts:["Giảm chi phí sản xuất","Mở rộng thị phần","Gia tăng lợi nhuận độc quyền","Tất cả các ý trên"],correct:3,explanation:"Ba mục tiêu này đều liên quan và hỗ trợ lẫn nhau: giảm chi phí → lợi nhuận cao hơn → tái đầu tư → thị phần tăng."},
+  {category:"rd",q:"Theo lý luận về tích tụ và tập trung tư bản, vì sao doanh nghiệp nhỏ thường bất lợi hơn trong cuộc đua công nghệ?",opts:["Vì doanh nghiệp nhỏ luôn bị cấm nghiên cứu","Vì họ thường thiếu vốn, nhân lực và khả năng chịu rủi ro dài hạn","Vì doanh nghiệp nhỏ không được phép cạnh tranh","Vì họ luôn có công nghệ hiện đại hơn doanh nghiệp lớn"],correct:1,explanation:"Nghiên cứu R&D đòi hỏi vốn lớn, nhân lực cao cấp và thời gian dài, doanh nghiệp nhỏ khó đáp ứng."},
+  {category:"rd",q:"Độc quyền công nghệ tạo ra rào cản gia nhập thị trường chủ yếu thông qua cơ chế nào?",opts:["Làm cho mọi đối thủ được hỗ trợ như nhau","Buộc đối thủ phải chịu chi phí nghiên cứu rất lớn hoặc phụ thuộc vào công nghệ của doanh nghiệp độc quyền","Xóa bỏ nhu cầu của người tiêu dùng","Làm cho nhà nước không còn tồn tại"],correct:1,explanation:"Để cạnh tranh, đối thủ phải đầu tư lớn vào R&D tương đương hoặc trả bản quyền — cả hai đều tốn kém."},
+  {category:"rd",q:"Theo quan điểm của kinh tế chính trị Mác – Lênin, sự phát triển khoa học – công nghệ dưới chủ nghĩa tư bản vừa thúc đẩy lực lượng sản xuất, vừa làm sâu sắc thêm mâu thuẫn nào?",opts:["Mâu thuẫn giữa lao động trí óc và lao động chân tay","Mâu thuẫn giữa lực lượng sản xuất xã hội hóa cao với quan hệ chiếm hữu tư nhân tư bản chủ nghĩa","Mâu thuẫn giữa thành thị và nông thôn","Mâu thuẫn giữa cung và cầu ngắn hạn"],correct:1,explanation:"Lực lượng sản xuất ngày càng mang tính xã hội cao, nhưng kết quả vẫn thuộc sở hữu tư nhân — đây là mâu thuẫn cơ bản."},
+  {category:"rd",q:"Một doanh nghiệp liên tục mua lại các startup công nghệ mới nổi để ngăn họ trở thành đối thủ. Hiện tượng này phản ánh điều gì?",opts:["Xu hướng xóa bỏ tích tụ tư bản","Xu hướng củng cố độc quyền thông qua kiểm soát đổi mới","Xu hướng bình đẳng hóa thị trường","Xu hướng giảm quy mô doanh nghiệp lớn"],correct:1,explanation:"'Killer acquisition' — mua startup để kiểm soát công nghệ mới, ngăn chặn đổi mới cạnh tranh."},
+  {category:"rd",q:"Độc quyền công nghệ trong nền kinh tế thị trường nên được hiểu đúng nhất là gì?",opts:["Luôn chỉ có tác hại, không có mặt tích cực nào","Vừa có thể thúc đẩy đổi mới, vừa có thể kìm hãm cạnh tranh và gây bất bình đẳng thị trường","Luôn làm giá cả giảm mạnh cho mọi người","Làm mất hoàn toàn vai trò của lợi nhuận"],correct:1,explanation:"Nhận thức biện chứng: độc quyền công nghệ có thể thúc đẩy đổi mới nhưng cũng kìm hãm cạnh tranh."},
+  {category:"acquire",q:`Theo giáo trình Kinh tế chính trị Mác – Lênin, "tập trung tư bản" khác "tích tụ tư bản" ở điểm cơ bản nào?`,opts:["Tập trung tư bản là tăng tư bản cá biệt bằng sáp nhập, thôn tính; tích tụ tư bản là tăng tư bản nhờ tích lũy từ giá trị thặng dư","Tập trung tư bản là giảm quy mô doanh nghiệp; tích tụ là chia nhỏ doanh nghiệp","Hai khái niệm hoàn toàn giống nhau","Tích tụ tư bản là do nhà nước cấp phát vốn miễn phí"],correct:0,explanation:"Tích tụ tư bản: tái đầu tư giá trị thặng dư. Tập trung tư bản: hợp nhất, thôn tính từ bên ngoài."},
+  {category:"acquire",q:"Hoạt động mua bán và sáp nhập doanh nghiệp (M&A) ngày nay phản ánh rõ nhất quá trình nào?",opts:["Tích tụ tư bản","Tập trung tư bản","Phân phối lại thu nhập cá nhân","Tiêu dùng tư bản"],correct:1,explanation:"M&A là hình thức tập trung tư bản điển hình — kết hợp nhiều tư bản riêng lẻ thành một khối lớn hơn."},
+  {category:"acquire",q:"Vì sao quá trình tập trung sản xuất và tư bản thường dẫn đến sự hình thành các tổ chức độc quyền?",opts:["Vì số doanh nghiệp lớn giảm xuống, dễ liên kết hoặc chi phối thị trường","Vì mọi doanh nghiệp tự nguyện rút khỏi thị trường","Vì người lao động không còn làm việc","Vì hàng hóa mất đi giá trị sử dụng"],correct:0,explanation:"Khi ít doanh nghiệp lớn kiểm soát phần lớn sản lượng, họ dễ phối hợp hoặc áp đặt giá."},
+  {category:"acquire",q:"Khi nhiều doanh nghiệp nhỏ bị doanh nghiệp lớn thâu tóm, cấu trúc thị trường sẽ chuyển biến theo hướng nào?",opts:["Phân tán hơn","Cạnh tranh hoàn hảo hơn","Tập trung cao hơn, ít chủ thể lớn hơn","Không thay đổi gì"],correct:2,explanation:"Thôn tính làm giảm số lượng đối thủ, thị trường tập trung hơn và quyền lực thị trường tăng lên."},
+  {category:"acquire",q:"Theo lý luận độc quyền, mục tiêu sâu xa của hoạt động mua bán và sáp nhập doanh nghiệp M&A trong nhiều trường hợp là gì?",opts:["Chỉ để tăng số lượng nhân viên","Chủ yếu để kiểm soát thị trường và củng cố quyền lực kinh tế","Chỉ để đóng cửa doanh nghiệp mới mua","Để xóa bỏ hoàn toàn sản xuất hàng hóa"],correct:1,explanation:"M&A thường nhằm tăng thị phần, loại bỏ đối thủ, kiểm soát chuỗi cung ứng."},
+  {category:"acquire",q:"Một tập đoàn mua lại đối thủ lớn nhất để giảm cạnh tranh về giá. Hiện tượng này thể hiện xu hướng nào?",opts:["Tăng cường cạnh tranh tự do thuần túy","Chuyển từ cạnh tranh sang hạn chế cạnh tranh nhằm củng cố độc quyền","Xóa bỏ quy luật lợi nhuận","Tăng bình đẳng trên thị trường"],correct:1,explanation:"Mua lại đối thủ để giảm áp lực giá là biểu hiện rõ của hành vi chống cạnh tranh."},
+  {category:"acquire",q:"Tại sao trong điều kiện cạnh tranh tự do, chính cạnh tranh lại có thể dẫn tới độc quyền?",opts:["Vì cạnh tranh làm các doanh nghiệp mạnh thâu tóm hoặc loại bỏ doanh nghiệp yếu","Vì cạnh tranh luôn xóa hết doanh nghiệp lớn","Vì cạnh tranh làm mọi doanh nghiệp có quy mô bằng nhau","Vì cạnh tranh làm tư bản biến mất"],correct:0,explanation:"Quy luật Lênin: 'Cạnh tranh tự do đẻ ra tập trung sản xuất, và sự tập trung này dẫn thẳng tới độc quyền.'"},
+  {category:"acquire",q:"Theo V.I. Lênin, sự phát triển của các tổ chức độc quyền gắn liền với điều gì?",opts:["Sự tích tụ và tập trung sản xuất đạt mức rất cao","Sự biến mất hoàn toàn của công nghiệp","Sự chấm dứt quan hệ tiền tệ","Sự suy giảm tuyệt đối của doanh nghiệp lớn"],correct:0,explanation:"Lênin: khi tập trung sản xuất đạt mức đủ cao, sự liên minh giữa các doanh nghiệp lớn trở nên tất yếu."},
+  {category:"acquire",q:"Theo góc nhìn kinh tế chính trị Mác – Lênin, hoạt động mua bán và sáp nhập doanh nghiệp có thể kéo theo hệ quả nào đối với người lao động và người tiêu dùng?",opts:["Luôn chỉ có lợi cho mọi bên","Có thể làm tăng quyền lực thị trường, gây áp lực lên lao động và làm giảm lợi ích người tiêu dùng","Làm tiền lương và phúc lợi tăng lên tuyệt đối trong mọi trường hợp","Không ảnh hưởng gì đến xã hội"],correct:1,explanation:"Quyền lực thị trường tăng → giá tăng cho người tiêu dùng; sa thải nhân viên trùng lặp → áp lực lên lao động."},
+  {category:"acquire",q:"Tình huống nào dưới đây thể hiện hoạt động mua bán và sáp nhập doanh nghiệp là công cụ củng cố quyền lực độc quyền rõ nhất?",opts:["Một doanh nghiệp mua thêm máy móc để tăng sản lượng","Một tập đoàn mua đối thủ chính và sau đó kiểm soát phần lớn thị phần ngành","Một công ty mở thêm chi nhánh mới","Một hộ kinh doanh đổi tên thương hiệu"],correct:1,explanation:"Mua đối thủ chính → kiểm soát thị phần ngành — hình thức M&A độc quyền điển hình nhất."},
+  {category:"lobby",q:"Theo lý luận về chủ nghĩa tư bản độc quyền nhà nước, vì sao các tập đoàn lớn có xu hướng tác động đến chính sách nhà nước?",opts:["Vì họ muốn từ bỏ lợi nhuận","Vì họ muốn chính sách có lợi cho việc duy trì và mở rộng lợi ích độc quyền","Vì họ không quan tâm đến thị trường","Vì nhà nước cấm mọi doanh nghiệp hoạt động"],correct:1,explanation:"Tư bản độc quyền sử dụng quyền lực kinh tế để can thiệp vào chính sách, bảo vệ lợi nhuận siêu ngạch."},
+  {category:"lobby",q:`"Lobby" (vận động hành lang) trong bối cảnh kinh tế thị trường, nếu đặt trong khung phân tích giữa tư bản độc quyền và nhà nước, được hiểu đúng nhất là gì?`,opts:["Quá trình người tiêu dùng mặc cả giá","Hoạt động tác động chính sách để phục vụ lợi ích của nhóm doanh nghiệp hoặc tập đoàn","Hình thức xóa bỏ mọi quy định pháp luật","Hoạt động nghiên cứu khoa học thuần túy"],correct:1,explanation:"Lobby là hoạt động vận động hành lang — tác động vào quá trình lập pháp và hành pháp để bảo vệ lợi ích nhóm."},
+  {category:"lobby",q:"Khi doanh nghiệp tìm cách tác động để có quy định có lợi riêng cho mình, hành vi đó gần với khái niệm nào nhất?",opts:["Cạnh tranh hoàn hảo","Tìm kiếm đặc lợi","Tiêu dùng hiệu quả","Phân phối công bằng"],correct:1,explanation:"Tìm kiếm đặc lợi là hành vi tìm kiếm lợi ích kinh tế thông qua thao túng chính sách thay vì tạo ra giá trị thực."},
+  {category:"lobby",q:"Theo tư tưởng Mác – Lênin, sự liên kết giữa tư bản độc quyền và bộ máy nhà nước thường nhằm mục tiêu gì?",opts:["Bảo vệ tuyệt đối lợi ích của mọi giai cấp như nhau","Phục vụ và bảo đảm điều kiện tái sản xuất, mở rộng quyền lực của tư bản độc quyền","Xóa bỏ vai trò của tư bản tài chính","Thủ tiêu toàn bộ thị trường"],correct:1,explanation:"Trong CNTB độc quyền nhà nước, bộ máy nhà nước thường bị chi phối bởi lợi ích tư bản độc quyền."},
+  {category:"lobby",q:"Sự chi phối cơ quan quản lý có thể làm biến dạng cạnh tranh thị trường như thế nào?",opts:["Làm thị trường minh bạch hơn cho mọi doanh nghiệp như nhau","Làm quy định nghiêng về phía doanh nghiệp lớn, gây bất lợi cho đối thủ và người tiêu dùng","Làm cho giá cả luôn phản ánh đúng chi phí xã hội","Không ảnh hưởng gì đến cạnh tranh"],correct:1,explanation:"Khi cơ quan quản lý bị 'bắt giữ' bởi ngành mà họ giám sát, quy định sẽ có lợi cho doanh nghiệp lớn."},
+  {category:"lobby",q:"Một doanh nghiệp lớn vận động hành lang để nhà nước đặt ra tiêu chuẩn kỹ thuật quá cao, khiến doanh nghiệp nhỏ khó gia nhập thị trường. Đây là biểu hiện rõ nhất của hiện tượng nào?",opts:["Cạnh tranh công bằng","Tìm kiếm đặc lợi kết hợp với tạo rào cản gia nhập","Tăng phúc lợi xã hội thuần túy","Quy luật lưu thông tiền tệ"],correct:1,explanation:"Dùng lobby để tạo rào cản kỹ thuật là hành vi tìm kiếm đặc lợi điển hình."},
+  {category:"lobby",q:"Vì sao trong chủ nghĩa tư bản độc quyền nhà nước, chính sách công đôi khi không hoàn toàn phục vụ lợi ích chung của toàn xã hội?",opts:["Vì nhà nước không có bất kỳ vai trò nào","Vì nhà nước có thể chịu ảnh hưởng mạnh từ các nhóm tư bản độc quyền","Vì mọi chính sách đều do người lao động quyết định trực tiếp","Vì thị trường đã bị xóa bỏ hoàn toàn"],correct:1,explanation:"Áp lực nhóm lợi ích và 'cửa quay' giữa doanh nghiệp và cơ quan quản lý làm chính sách bị lệch."},
+  {category:"lobby",q:"Theo giáo trình, vai trò của nhà nước trong nền kinh tế thị trường tư bản chủ nghĩa có hoàn toàn trung lập không?",opts:["Có, luôn hoàn toàn trung lập","Không, vì trong nhiều trường hợp nhà nước gắn với việc bảo vệ điều kiện vận động của tư bản độc quyền","Có, vì nhà nước chỉ đại diện cho người tiêu dùng","Không, vì nhà nước chỉ đại diện cho nông dân nhỏ"],correct:1,explanation:"Nhà nước trong CNTB không hoàn toàn trung lập — bị chi phối bởi các nhóm lợi ích mạnh nhất."},
+  {category:"lobby",q:`Vì sao vận động hành lang có thể trở thành công cụ duy trì lợi nhuận độc quyền ngay cả khi doanh nghiệp không còn ưu thế sản xuất vượt trội?`,opts:["Vì doanh nghiệp có thể dùng ảnh hưởng chính sách để hạn chế cạnh tranh thay vì chỉ dựa vào hiệu quả sản xuất","Vì lobby làm mọi đối thủ mạnh lên","Vì lobby luôn làm giá giảm mạnh","Vì lobby xóa bỏ mọi quy định thị trường"],correct:0,explanation:"Khi lợi thế sản xuất mất đi, doanh nghiệp dùng ảnh hưởng chính sách để duy trì độc quyền — tìm kiếm đặc lợi thuần túy."},
+  {category:"lobby",q:"Mối quan hệ giữa độc quyền kinh tế và quyền lực chính trị được thể hiện rõ nhất qua cơ chế nào?",opts:["Doanh nghiệp cạnh tranh bằng đổi mới kỹ thuật thuần túy","Nhóm lợi ích tác động chính sách, pháp luật và cơ quan quản lý để bảo vệ vị thế thị trường của mình","Người tiêu dùng tự giảm mua hàng","Hàng hóa mất giá trị sử dụng"],correct:1,explanation:"Sự liên kết giữa kinh tế và quyền lực chính trị là đặc trưng cốt lõi của CNTB độc quyền nhà nước."},
+  {category:"green",q:"Trong nền kinh tế thị trường, vì sao doanh nghiệp có thể gây ô nhiễm môi trường nhưng không tự nguyện gánh toàn bộ chi phí đó?",opts:["Vì chi phí môi trường thường bị đẩy sang xã hội dưới dạng ngoại tác","Vì môi trường không liên quan đến sản xuất","Vì doanh nghiệp không bao giờ quan tâm lợi nhuận","Vì giá cả luôn phản ánh đầy đủ mọi chi phí"],correct:0,explanation:"Ô nhiễm là ngoại tác tiêu cực — chi phí do xã hội gánh chịu, nhưng không tính vào giá hàng hóa → thất bại thị trường."},
+  {category:"green",q:"Chi phí môi trường như phát thải carbon thường được xem là loại chi phí gì nếu doanh nghiệp đẩy gánh nặng sang xã hội?",opts:["Chi phí nội bộ đầy đủ","Chi phí ngoại tác","Chi phí cố định thuần túy","Chi phí kế toán bằng 0"],correct:1,explanation:"Ngoại tác (externality) là chi phí hoặc lợi ích không được phản ánh trong giá thị trường."},
+  {category:"green",q:"Theo góc nhìn kinh tế chính trị Mác – Lênin, việc doanh nghiệp theo đuổi lợi nhuận tối đa có thể dẫn đến mâu thuẫn gì với lợi ích xã hội trong vấn đề môi trường?",opts:["Mâu thuẫn giữa tăng lợi nhuận tư nhân và bảo vệ điều kiện sống chung của xã hội","Mâu thuẫn giữa nông nghiệp và công nghiệp nhẹ","Mâu thuẫn giữa tiền giấy và tiền vàng","Không có mâu thuẫn nào"],correct:0,explanation:"Lợi nhuận tối đa hóa → cắt giảm chi phí xử lý ô nhiễm → xã hội gánh hậu quả môi trường."},
+  {category:"green",q:"Một doanh nghiệp giảm chi phí bằng cách xả thải chưa xử lý ra môi trường. Hành vi này giúp doanh nghiệp đạt được điều gì trong ngắn hạn, và gây ra hậu quả gì trong dài hạn?",opts:["Giảm chi phí ngắn hạn nhưng làm tăng tổn thất xã hội và môi trường dài hạn","Tăng chi phí ngắn hạn và giảm ô nhiễm dài hạn","Không tác động gì đến xã hội","Làm giá trị hàng hóa biến mất"],correct:0,explanation:"Điển hình ngoại tác tiêu cực: lợi ích tư nhân ngắn hạn, nhưng chi phí dài hạn do xã hội gánh."},
+  {category:"green",q:"Nếu giá hàng hóa không phản ánh đúng chi phí carbon, thị trường sẽ phát tín hiệu sai lệch như thế nào?",opts:["Khuyến khích sản xuất và tiêu dùng nhiều hơn mức xã hội mong muốn đối với hàng hóa gây ô nhiễm","Làm mọi doanh nghiệp giảm sản xuất","Tự động sửa sai mà không cần bất kỳ cơ chế nào","Khiến lợi nhuận bằng 0 trong toàn bộ nền kinh tế"],correct:0,explanation:"Khi giá thấp hơn chi phí thực tế (do không tính carbon), thị trường khuyến khích tiêu dùng quá mức hàng gây ô nhiễm."},
+  {category:"green",q:"Trong bối cảnh độc quyền, doanh nghiệp lớn có thể lợi dụng vị thế của mình để trì hoãn chính sách môi trường bằng cách nào?",opts:["Tự nguyện tăng chi phí xử lý ngay lập tức","Dùng ảnh hưởng kinh tế và chính trị để cản trở hoặc làm chậm quy định bất lợi cho lợi nhuận","Rút hoàn toàn khỏi thị trường","Chia nhỏ toàn bộ tài sản cho đối thủ"],correct:1,explanation:"Tư bản độc quyền dùng lobby và quyền lực chính trị để trì hoãn quy định môi trường."},
+  {category:"green",q:"Tại sao có thể nói ô nhiễm môi trường là biểu hiện của mâu thuẫn giữa tính chất xã hội của sản xuất và mục đích chiếm đoạt tư nhân?",opts:["Vì hậu quả môi trường do xã hội gánh chịu, trong khi lợi ích lợi nhuận chủ yếu do doanh nghiệp tư nhân chiếm hữu","Vì xã hội không liên quan đến sản xuất","Vì mọi ô nhiễm đều do người tiêu dùng tạo ra","Vì môi trường nằm ngoài kinh tế"],correct:0,explanation:"Sản xuất mang tính xã hội, nhưng kết quả (lợi nhuận) chiếm tư nhân — mâu thuẫn cơ bản Mác nêu."},
+  {category:"green",q:"Một tập đoàn năng lượng phản đối quy định đánh thuế carbon vì làm giảm lợi nhuận. Tình huống này cho thấy xung đột giữa những lợi ích nào?",opts:["Giữa lợi nhuận tư bản và lợi ích xã hội về môi trường","Giữa người tiêu dùng với người lao động","Giữa hàng hóa với tiền tệ","Giữa nông thôn với thành thị"],correct:0,explanation:"Thuế carbon làm nội hóa ngoại tác → giảm lợi nhuận doanh nghiệp nhưng bảo vệ lợi ích xã hội."},
+  {category:"green",q:"Chi phí môi trường do xã hội gánh chịu có làm cho 'lợi nhuận' của doanh nghiệp trở nên không phản ánh đầy đủ chi phí thực tế của sản xuất không?",opts:["Không, vì lợi nhuận luôn phản ánh đầy đủ mọi chi phí xã hội","Có, vì một phần chi phí thật đã bị chuyển ra ngoài doanh nghiệp","Không, vì môi trường không tạo ra chi phí","Có, nhưng chỉ trong nền kinh tế phi thị trường"],correct:1,explanation:"Lợi nhuận kế toán cao hơn lợi nhuận kinh tế thực vì không tính chi phí ngoại tác."},
+  {category:"green",q:"Vì sao các vấn đề môi trường thường khó được giải quyết triệt để nếu chỉ dựa vào cơ chế thị trường?",opts:["Vì thị trường luôn tự động xử lý được mọi ngoại tác","Vì doanh nghiệp theo đuổi lợi nhuận riêng, còn chi phí môi trường thường mang tính xã hội và dễ bị ngoại hiện hóa","Vì hàng hóa xanh không tồn tại","Vì người tiêu dùng không bao giờ quan tâm môi trường"],correct:1,explanation:"Thị trường thất bại trong trường hợp hàng hóa công cộng và ngoại tác — môi trường là điển hình, cần can thiệp nhà nước."}
+];
+
+const EVENTS=[
+  {id:1,icon:"🎁",name:"Nhận trợ cấp nhà nước",desc:"Chính phủ phê duyệt gói hỗ trợ doanh nghiệp trong lĩnh vực của bạn.",cond:s=>s.risk<4,effects:{capital:40,rep:5},weight:14},
+  {id:2,icon:"🚀",name:"Làn sóng công nghệ",desc:"Xu hướng công nghệ mới đang bùng nổ, doanh nghiệp đổi mới được hưởng lợi lớn.",cond:s=>s.tech>15,effects:{tech:10,msPct:4},weight:11},
+  {id:3,icon:"🌱",name:"Xu hướng tiêu dùng xanh",desc:"Người tiêu dùng ngày càng ưa chuộng sản phẩm thân thiện môi trường.",cond:s=>s.pollution<25,effects:{rep:10,msPct:3},weight:11},
+  {id:4,icon:"📈",name:"Làn sóng đầu tư",desc:"Thị trường vốn tích cực, nhà đầu tư đang rót tiền vào doanh nghiệp uy tín.",cond:s=>s.reputation>60&&s.risk<3,effects:{capital:50,rep:5},weight:9},
+  {id:5,icon:"✊",name:"Bất ổn lao động",desc:"Làn sóng đình công và bất mãn lao động gây gián đoạn sản xuất nghiêm trọng.",cond:s=>s.risk>=2,effects:{capital:-25,rep:-5},weight:11},
+  {id:6,icon:"🚢",name:"Gián đoạn chuỗi cung ứng",desc:"Khủng hoảng logistics toàn cầu đang làm tăng chi phí và trì hoãn giao hàng.",cond:()=>true,effects:{capital:-30,msPct:-2},weight:9},
+  {id:7,icon:"⚔",name:"Chiến tranh giá cả",desc:"Đối thủ phát động cuộc chiến giá cả, buộc bạn phải chịu thiệt hại để giữ khách hàng.",cond:s=>s.marketShare<70,effects:{msPct:-3,capital:-20},weight:11},
+  {id:8,icon:"🌊",name:"Bảo vệ môi trường",desc:"Làn sóng biểu tình và tẩy chay do ô nhiễm nghiêm trọng gây ra.",cond:s=>s.pollution>40,effects:{rep:-15,msPct:-5},weight:14},
+  {id:9,icon:"⚖",name:"Cảnh báo chống độc quyền",desc:"Cơ quan cạnh tranh phát cảnh báo chính thức về tình trạng tập trung thị trường.",cond:s=>s.marketShare>55&&s.risk>3.5,effects:{interventionUp:1,rep:-10},weight:14},
+  {id:10,icon:"🔍",name:"Điều tra chính thức",desc:"Chính phủ mở hồ sơ điều tra chính thức về hành vi độc quyền của công ty.",cond:s=>s.marketShare>65&&s.risk>5,effects:{interventionUp:2,rep:-20,capital:-40},weight:11},
+  {id:11,icon:"⚡",name:"Phạt nặng",desc:"Kết thúc điều tra với mức phạt kỷ lục và buộc điều chỉnh hoạt động.",cond:s=>s.interventionStage>=2&&s.risk>6,effects:{capital:-80,msPct:-10,rep:-15,interventionUp:3},weight:9},
+  {id:12,icon:"💥",name:"Bê bối vận động hành lang",desc:"Hoạt động vận động hành lang bị phanh phui, tạo ra làn sóng chỉ trích dữ dội.",cond:s=>s.consecutiveLobby>2||s.lobbyScandal,effects:{rep:-25,influence:-15,scandal:true},weight:14},
+  {id:13,icon:"🏦",name:"Khủng hoảng tín dụng",desc:"Tình trạng nợ cao khiến các tổ chức tín dụng siết chặt điều kiện cho vay.",cond:s=>s.debt>200&&s.capital<80,effects:{capital:-60,rep:-10},weight:14},
+  {id:14,icon:"📢",name:"Làn sóng tẩy chay",desc:"Người tiêu dùng phát động tẩy chay do chính sách giá cả không công bằng.",cond:s=>s.consecutivePriceHikes>2,effects:{msPct:-5,rep:-20},weight:14},
+  {id:15,icon:"🔨",name:"Buộc thoái vốn",desc:"Tòa án ra lệnh buộc công ty thoái vốn khỏi một số mảng kinh doanh chủ chốt.",cond:s=>s.interventionStage>=3&&s.risk>7,effects:{msPct:-15,capital:-100,forceDivest:true},weight:8}
+];
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let G={};
+let selectedAction=null;
+let quizResolve=null;
+let eventResolve=null;
+let quizUsed={rd:[],acquire:[],lobby:[],green:[]};
+let busy=false;
+
+function initState(companyName,sectorId,modeId){
+  const sector=SECTORS.find(s=>s.id===sectorId);
+  const mode=MODES.find(m=>m.id===modeId);
+  G={
+    company:companyName,sector,mode,
+    capital:120,marketShare:10,reputation:55,
+    influence:5,tech:0,debt:0,
+    pollution:sector.basePollution,
+    year:1,calendarYear:2026,
+    interventionStage:0,
+    consecutiveAcquisitions:0,consecutivePriceHikes:0,
+    consecutiveLobby:0,lobbyScandal:false,
+    rdNeglectYears:0,lastAction:null,
+    log:[],over:false
+  };
+  G.risk=computeRisk();
+}
+
+function computeRisk(){
+  const s=G;
+  let r=0;
+  if(s.marketShare>80)r+=3.5;
+  else if(s.marketShare>60)r+=2.5;
+  else if(s.marketShare>40)r+=1.5;
+  else if(s.marketShare>25)r+=0.8;
+  if(s.reputation<20)r+=2.5;
+  else if(s.reputation<35)r+=1.5;
+  else if(s.reputation<50)r+=0.7;
+  else if(s.reputation>75)r-=0.5;
+  if(s.pollution>70)r+=2.0;
+  else if(s.pollution>50)r+=1.2;
+  else if(s.pollution>30)r+=0.6;
+  r-=Math.min(s.influence*0.08,1.5);
+  const ratio=s.capital>0?s.debt/s.capital:s.debt>0?10:0;
+  if(ratio>3)r+=2.5;
+  else if(ratio>2)r+=1.5;
+  else if(ratio>1)r+=0.8;
+  r+=s.consecutiveAcquisitions*0.5;
+  r+=s.consecutivePriceHikes*0.3;
+  if(s.lobbyScandal)r+=1.5;
+  r-=s.tech*0.05;
+  r*=s.sector.antitrustSensitivity;
+  r*=s.mode.riskMult;
+  return Math.max(0,Math.min(10,r));
+}
+
+function msEfficiency(ms){
+  if(ms<30)return 1.0;
+  if(ms<60)return 0.75;
+  if(ms<80)return 0.5;
+  return 0.3;
+}
+
+// ============================================================
+// ACTIONS DEFINITION
+// ============================================================
+function getActions(){
+  const s=G;
+  return [
+    {id:'rd',icon:'🔬',name:'Đầu tư R&D',cost:'25 vốn',costVal:25,
+     desc:'Nghiên cứu công nghệ mới, nâng cao năng lực cạnh tranh',quizCat:'rd',
+     available:s.capital>=25},
+    {id:'price',icon:'💲',name:'Tăng giá bán',cost:'Miễn phí',costVal:0,
+     desc:'Tăng biên lợi nhuận, nhưng đẩy khách hàng sang đối thủ',quizCat:null,
+     available:true},
+    {id:'acquire',icon:'🏢',name:'Thôn tính đối thủ',cost:'50 vốn',costVal:50,
+     desc:'Mua lại công ty cạnh tranh, mở rộng thị phần nhanh chóng',quizCat:'acquire',
+     available:s.capital>=50},
+    {id:'green',icon:'🌿',name:'Đầu tư xanh',cost:'30 vốn',costVal:30,
+     desc:'Giảm ô nhiễm, cải thiện hình ảnh doanh nghiệp',quizCat:'green',
+     available:s.capital>=30},
+    {id:'lobby',icon:'🤝',name:'Vận động hành lang',cost:'20 vốn',costVal:20,
+     desc:'Tạo quan hệ chính trị, trì hoãn can thiệp nhà nước',quizCat:'lobby',
+     available:s.capital>=20},
+    {id:'borrow',icon:'🏦',name:'Vay vốn',cost:'+80 nợ',costVal:0,
+     desc:'Tăng vốn ngay lập tức để đầu tư, nhưng tăng gánh nặng lãi suất',quizCat:null,
+     available:s.debt<400},
+    {id:'repay',icon:'💳',name:'Trả nợ',cost:'40 vốn',costVal:40,
+     desc:'Giảm nợ, cải thiện uy tín tài chính',quizCat:null,
+     available:s.debt>0&&s.capital>=40}
+  ];
+}
+
+function forecastAction(actionId){
+  const s=G;
+  const eff=s.sector;
+  const msEff=msEfficiency(s.marketShare);
+  let d={capital:0,marketShare:0,reputation:0,tech:0,pollution:0,influence:0,debt:0};
+  if(actionId==='rd'){
+    d.tech=Math.round(5*eff.rdBonus);
+    d.rep=3;
+    d.marketShare=+(2*eff.rdBonus*msEff).toFixed(1);
+    d.capital=-25;
+  } else if(actionId==='price'){
+    d.capital=Math.round(15+s.marketShare*0.5);
+    d.rep=-8;
+    d.marketShare=-(2*msEff).toFixed(1)*1;
+  } else if(actionId==='acquire'){
+    d.capital=-50;
+    d.marketShare=+(8*eff.acquisitionBonus*msEff).toFixed(1);
+    d.influence=4;
+    d.rep=-5;
+  } else if(actionId==='green'){
+    d.capital=-30;
+    d.pollution=-Math.round(15*eff.greenBonus);
+    d.rep=8;
+  } else if(actionId==='lobby'){
+    d.capital=-20;
+    d.influence=Math.round(6*eff.lobbyBonus);
+    d.rep=-3;
+  } else if(actionId==='borrow'){
+    d.capital=80;d.debt=80;
+  } else if(actionId==='repay'){
+    d.capital=-40;d.debt=-40;d.rep=3;
+  }
+  return d;
+}
+
+async function doAction(actionId){
+  const s=G;
+  const eff=s.sector;
+  const msEff=msEfficiency(s.marketShare);
+  let desc='';
+
+  // reset streaks
+  if(actionId!=='acquire')s.consecutiveAcquisitions=0;
+  if(actionId!=='price')s.consecutivePriceHikes=0;
+  if(actionId!=='lobby')s.consecutiveLobby=0;
+
+  if(actionId==='rd'){
+    s.capital-=25;
+    const tGain=Math.round(5*eff.rdBonus);
+    const msGain=+(2*eff.rdBonus*msEff).toFixed(2);
+    s.tech+=tGain;s.reputation+=3;s.marketShare+=msGain;
+    s.rdNeglectYears=0;
+    desc=`R&D: +${tGain} công nghệ, +${msGain.toFixed(1)}% thị phần`;
+    playSfx('rd');
+    addLog(desc,'good');
+  } else if(actionId==='price'){
+    const gain=Math.round(15+s.marketShare*0.5);
+    const msLoss=+(2*msEff).toFixed(2);
+    s.capital+=gain;s.reputation-=8;s.marketShare-=msLoss;
+    s.consecutivePriceHikes++;
+    desc=`Tăng giá: +${gain} vốn, -${msLoss.toFixed(1)}% thị phần, -8 uy tín`;
+    playSfx('price');
+    addLog(desc,'warn');
+  } else if(actionId==='acquire'){
+    s.capital-=50;
+    const msGain=+(8*eff.acquisitionBonus*msEff).toFixed(2);
+    s.marketShare+=msGain;s.influence+=4;s.reputation-=5;
+    s.consecutiveAcquisitions++;
+    desc=`Thôn tính: +${msGain.toFixed(1)}% thị phần, +4 ảnh hưởng, -5 uy tín`;
+    playSfx('acquire');
+    addLog(desc,'good');
+  } else if(actionId==='green'){
+    s.capital-=30;
+    const polReduce=Math.round(15*eff.greenBonus);
+    s.pollution=Math.max(0,s.pollution-polReduce);s.reputation+=8;
+    desc=`Đầu tư xanh: -${polReduce} ô nhiễm, +8 uy tín`;
+    playSfx('green');
+    addLog(desc,'good');
+  } else if(actionId==='lobby'){
+    s.capital-=20;
+    const infGain=Math.round(6*eff.lobbyBonus);
+    s.influence+=infGain;s.reputation-=3;
+    s.consecutiveLobby++;
+    if(s.reputation<30&&Math.random()<0.3){s.lobbyScandal=true;addLog('⚠ Nguy cơ bê bối lobby tăng cao!','bad');}
+    desc=`Lobby: +${infGain} ảnh hưởng, -3 uy tín`;
+    playSfx('lobby');
+    addLog(desc,'good');
+  } else if(actionId==='borrow'){
+    const rate=s.reputation<40?1.5:1.0;
+    const terms=rate>1?'(lãi suất cao)':'';
+    s.capital+=80;s.debt+=80;
+    desc=`Vay vốn: +80 vốn, +80 nợ ${terms}`;
+    playSfx('borrow');
+    addLog(desc,'warn');
+  } else if(actionId==='repay'){
+    s.capital-=40;s.debt=Math.max(0,s.debt-40);s.reputation+=3;
+    desc=`Trả nợ: -40 vốn, -40 nợ, +3 uy tín`;
+    playSfx('repay');
+    addLog(desc,'good');
+  }
+  s.lastAction=actionId;
+}
+
+// ============================================================
+// END OF YEAR PASSIVES
+// ============================================================
+function endYearPassive(){
+  const s=G;
+  const msEff=msEfficiency(s.marketShare);
+
+  // 1. Passive market growth
+  const msGrow=+(0.5*msEff*s.mode.growthMult).toFixed(2);
+  s.marketShare+=msGrow;
+
+  // 2. Capital generation
+  const capGen=Math.round(15+s.marketShare*1.2+s.tech*0.5);
+  s.capital+=capGen;
+
+  // 3. Tech passive income
+  if(s.tech>20){
+    const techInc=Math.round(s.tech*0.08);
+    s.capital+=techInc;
+    addLog(`Công nghệ tạo thêm +${techInc} vốn`,'good');
+  }
+
+  // 4. Debt interest
+  const interestRate=s.reputation<30?0.12:0.08;
+  const interest=Math.round(s.debt*interestRate);
+  if(interest>0){s.capital-=interest;addLog(`Lãi suất nợ: -${interest} vốn`,'bad');}
+
+  // 5. Pollution rep penalty
+  if(s.pollution>50){
+    const polPenalty=Math.round((s.pollution-50)*0.3*s.mode.riskMult);
+    s.reputation=Math.max(0,s.reputation-polPenalty);
+    if(polPenalty>0)addLog(`Ô nhiễm cao gây -${polPenalty} uy tín`,'bad');
+  }
+
+  // 6. Energy passive pollution
+  if(s.sector.id==='energy'&&s.lastAction!=='green'){
+    s.pollution+=2;
+    addLog('Năng lượng: +2 ô nhiễm thụ động','warn');
+  }
+
+  // 7. Low rep decay
+  if(s.reputation<25){
+    const decay=1.0+Math.random()*2.0;
+    const msLoss=+(s.marketShare*decay/100).toFixed(2);
+    s.marketShare=Math.max(0,s.marketShare-msLoss);
+    addLog(`Uy tín thấp: -${msLoss.toFixed(1)}% thị phần`,'bad');
+  }
+
+  // 8. R&D neglect
+  if(s.lastAction!=='rd'){s.rdNeglectYears++;}
+  if(s.rdNeglectYears>4){
+    const penalty=+((s.rdNeglectYears-4)*0.2*s.marketShare/100).toFixed(2);
+    s.marketShare=Math.max(0,s.marketShare-penalty);
+    addLog(`Lơ là R&D: -${penalty.toFixed(1)}% thị phần`,'bad');
+  }
+
+  addLog(`Năm ${s.calendarYear}: +${capGen} vốn từ doanh thu`,'normal');
+
+  // clamp values
+  s.marketShare=Math.max(0,Math.min(100,s.marketShare));
+  s.reputation=Math.max(0,Math.min(100,s.reputation));
+  s.pollution=Math.max(0,Math.min(100,s.pollution));
+  s.tech=Math.max(0,s.tech);
+  s.influence=Math.max(0,s.influence);
+}
+
+// ============================================================
+// STATE INTERVENTION
+// ============================================================
+function checkIntervention(){
+  const s=G;
+  const mt=s.mode.interventionThresholdMult;
+  const ats=s.sector.antitrustSensitivity;
+
+  // Check influence delay
+  const delayChance=s.influence>40?0.2:0;
+  if(Math.random()<delayChance){addLog('🤝 Ảnh hưởng chính trị đã trì hoãn can thiệp nhà nước!','good');return;}
+
+  if(s.interventionStage===0){
+    const thresh=65*mt*(ats<=1.2?1:0.85);
+    if(s.marketShare>thresh&&s.risk>3.5){
+      s.interventionStage=1;
+      addLog('👁️ Giai đoạn 1: Cơ quan phụ trách bắt đầu giám sát!','bad');
+      playSfx('alert');
+      showToast('Nhà nước bắt đầu giám sát!','warn');
+    }
+  } else if(s.interventionStage===1){
+    if(s.marketShare>80*mt&&s.risk>5){
+      s.interventionStage=2;s.reputation=Math.max(0,s.reputation-10);
+      addLog('🔍 Giai đoạn 2: Điều tra chính thức, -10 uy tín!','bad');
+      playSfx('alert');
+      showToast('Bị điều tra chính thức!','bad');
+    }
+  } else if(s.interventionStage===2){
+    if(s.risk>7){
+      s.interventionStage=3;s.capital-=80;
+      s.marketShare=Math.max(0,s.marketShare*0.9);
+      addLog('💥 Giai đoạn 3: Phạt nặng! -80 vốn, -10% thị phần','bad');
+      playSfx('alert');
+      showToast('Phạt nặng từ nhà nước!','bad');
+    }
+  }
+}
+
+// ============================================================
+// EVENTS
+// ============================================================
+function tryTriggerEvent(){
+  const s=G;
+  const prob=0.28+s.risk*0.07;
+  if(Math.random()>prob)return null;
+  const eligible=EVENTS.filter(e=>e.cond(s));
+  if(eligible.length===0)return null;
+  let weights=eligible.map(e=>{
+    let w=e.weight;
+    if(s.risk>5&&[5,6,7,8,9,10,11,12,13,14,15].includes(e.id))w*=1.5;
+    if(s.risk<3&&[1,2,3,4].includes(e.id))w*=1.3;
+    return w;
+  });
+  const total=weights.reduce((a,b)=>a+b,0);
+  let r=Math.random()*total;
+  for(let i=0;i<eligible.length;i++){r-=weights[i];if(r<=0)return eligible[i];}
+  return eligible[eligible.length-1];
+}
+
+function applyEvent(ev){
+  const s=G;
+  const msEff=msEfficiency(s.marketShare);
+  const eff=ev.effects;
+  if(eff.capital)s.capital+=eff.capital;
+  if(eff.rep)s.reputation=Math.max(0,Math.min(100,s.reputation+eff.rep));
+  if(eff.tech)s.tech+=eff.tech;
+  if(eff.msPct)s.marketShare=Math.max(0,Math.min(100,s.marketShare+eff.msPct*msEff));
+  if(eff.influence)s.influence=Math.max(0,s.influence+eff.influence);
+  if(eff.interventionUp){
+    s.interventionStage=Math.max(s.interventionStage,eff.interventionUp);
+  }
+  if(eff.scandal)s.lobbyScandal=true;
+  if(eff.forceDivest)s.interventionStage=4;
+}
+
+// ============================================================
+// WIN / LOSS
+// ============================================================
+function checkWinLoss(){
+  const s=G;
+
+  // Loss conditions
+  if(s.capital<-100){return{type:'lose',code:'bankrupt2',title:'Phá sản toàn diện',icon:'💸',desc:'Vốn âm quá sâu, công ty không còn khả năng tiếp tục hoạt động.'};}
+  if(s.capital<-50&&s.debt>100){return{type:'lose',code:'bankrupt',title:'Phá sản',icon:'💸',desc:'Gánh nặng nợ nần và thua lỗ đã đẩy công ty đến bờ vực phá sản.'};}
+  if(s.debt>500&&s.capital<50){return{type:'lose',code:'debt',title:'Sụp đổ vì nợ',icon:'🏦',desc:'Vòng xoáy nợ nần đã nhấn chìm công ty hoàn toàn.'};}
+  if(s.reputation<5&&s.year>5){return{type:'lose',code:'rep',title:'Sụp đổ uy tín',icon:'📉',desc:'Mất hoàn toàn niềm tin của thị trường, công ty bị cô lập hoàn toàn.'};}
+  if(s.interventionStage>=5){return{type:'lose',code:'breakup',title:'Giải thể cưỡng bức',icon:'⚖',desc:'Nhà nước ra lệnh giải thể công ty để bảo vệ thị trường cạnh tranh.'};}
+  if(s.marketShare<2&&s.year>8){return{type:'lose',code:'forgotten',title:'Bị lãng quên',icon:'👻',desc:'Thị phần quá nhỏ, công ty dần biến mất khỏi thị trường.'};}
+  if(s.interventionStage>=5){return{type:'lose',code:'divest',title:'Giải thể cưỡng bức',icon:'🔨',desc:'Nhà nước thi hành lệnh chia tách công ty.'};}
+
+  // Win conditions (check after year 10)
+  if(s.year>10){
+    if(s.marketShare>=95){return{type:'win',code:'king',title:'Vua Độc Quyền 👑',icon:'👑',desc:'Bạn đã chinh phục gần như toàn bộ thị trường. Không ai dám đương đầu với đế chế của bạn!',tier:'S'};}
+    if(s.marketShare>=75&&s.capital>=400&&s.influence>=60){return{type:'win',code:'tbtf',title:'Quá Lớn Để Sụp Đổ 🏛️',icon:'🏛️',desc:'Quy mô và ảnh hưởng của bạn lớn đến mức chính phủ không thể để bạn thất bại.',tier:'A'};}
+    if(s.marketShare>=60&&s.reputation>=75&&s.pollution<=15){return{type:'win',code:'ethical',title:'Người Khổng Lồ Có Đạo Đức 🌿',icon:'🌿',desc:'Bạn đã xây dựng đế chế mà không đánh đổi lương tâm. Một kỳ tích hiếm có!',tier:'A'};}
+    if(s.marketShare>=60&&s.tech>=70&&s.capital>=250){return{type:'win',code:'innovator',title:'Đế Chế Đổi Mới 🚀',icon:'🚀',desc:'Công nghệ là vũ khí tối thượng đưa bạn lên đỉnh cao không ai sánh kịp.',tier:'A'};}
+  }
+
+  // Time limit
+  if(s.year>30){
+    if(s.marketShare>=70){return{type:'win',code:'timelimit_dom',title:'Thống Trị Tương Đối',icon:'🥇',desc:`Sau 30 năm, ${s.company} đã xây dựng được vị thế thống trị vững chắc.`,tier:'B'};}
+    if(s.marketShare>=40){return{type:'neutral',code:'timelimit_mid',title:'Công ty tầm trung',icon:'🏢',desc:`Sau 30 năm hoạt động, ${s.company} đã phát triển ổn định nhưng chưa đạt đến độc quyền thực sự.`,tier:'C'};}
+    return{type:'neutral',code:'timelimit_small',title:'Hành trình kết thúc',icon:'📋',desc:`Sau 30 năm, ${s.company} vẫn là một doanh nghiệp nhỏ. Cần chiến lược tốt hơn!`,tier:'D'};
+  }
+  return null;
+}
+
+// ============================================================
+// QUIZ SYSTEM
+// ============================================================
+async function showQuiz(cat,actionName){
+  return new Promise(resolve=>{
+    quizResolve=resolve;
+    const catQs=QUIZ_BANK.filter(q=>q.category===cat);
+    if(quizUsed[cat].length>=catQs.length)quizUsed[cat]=[];
+    const available=catQs.filter((_,i)=>!quizUsed[cat].includes(i));
+    const idx=Math.floor(Math.random()*available.length);
+    const qi=catQs.indexOf(available[idx]);
+    quizUsed[cat].push(qi);
+    const q=available[idx];
+
+    document.getElementById('quiz-modal-title').textContent='📚 Câu hỏi kiến thức';
+    document.getElementById('quiz-modal-sub').textContent=actionName+' — Trả lời đúng để nhận thưởng';
+    document.getElementById('quiz-q').textContent=q.q;
+    document.getElementById('quiz-explanation').style.display='none';
+    document.getElementById('quiz-result').style.display='none';
+    document.getElementById('quiz-continue-btn').style.display='none';
+
+    const optsEl=document.getElementById('quiz-opts');
+    optsEl.innerHTML='';
+    q.opts.forEach((opt,i)=>{
+      const btn=document.createElement('button');
+      btn.className='quiz-opt';btn.textContent=opt;
+      btn.onclick=()=>answerQuiz(i,q,cat);
+      optsEl.appendChild(btn);
+    });
+    const modal=document.getElementById('quiz-modal');
+    playSfx('quizOpen');
+    modal.classList.add('show');
+  });
+}
+
+function answerQuiz(choiceIdx,q,cat){
+  const opts=document.querySelectorAll('.quiz-opt');
+  opts.forEach(o=>o.disabled=true);
+  const correct=choiceIdx===q.correct;
+  playSfx(correct?'correct':'wrong');
+  opts[q.correct].classList.add('correct');
+  if(!correct)opts[choiceIdx].classList.add('wrong');
+  document.getElementById('quiz-explanation').textContent='💡 '+q.explanation;
+  document.getElementById('quiz-explanation').style.display='block';
+
+  const rewards={
+    rd:{right:'+5 công nghệ, +3 uy tín',wrong:'-15 vốn, -3 uy tín'},
+    acquire:{right:'+2% thị phần, +4 ảnh hưởng, +10 vốn',wrong:'-5 uy tín, -1% thị phần'},
+    lobby:{right:'+8 ảnh hưởng, +10 vốn',wrong:'-8 uy tín'},
+    green:{right:'-8 ô nhiễm, +5 uy tín',wrong:'+5 ô nhiễm, -4 uy tín'}
+  };
+  const r=document.getElementById('quiz-result');
+  r.style.display='block';
+  r.className='quiz-result '+(correct?'win':'lose');
+  r.textContent=correct?('✅ Đúng! Phần thưởng: '+rewards[cat].right):('❌ Sai! Án phạt: '+rewards[cat].wrong);
+  document.getElementById('quiz-continue-btn').style.display='block';
+
+  // store result for after close
+  document.getElementById('quiz-modal').dataset.correct=correct?'1':'0';
+  document.getElementById('quiz-modal').dataset.cat=cat;
+}
+
+function resolveQuiz(){
+  const modal=document.getElementById('quiz-modal');
+  const correct=modal.dataset.correct==='1';
+  const cat=modal.dataset.cat;
+  playSfx('modalClose');
+  modal.classList.remove('show');
+  // Apply quiz effects
+  const s=G;
+  if(cat==='rd'){
+    if(correct){s.tech+=5;s.reputation+=3;addLog('Quiz đúng: +5 công nghệ, +3 uy tín','good');}
+    else{s.capital-=15;s.reputation-=3;addLog('Quiz sai: -15 vốn, -3 uy tín','bad');}
+  } else if(cat==='acquire'){
+    if(correct){s.marketShare+=2;s.influence+=4;s.capital+=10;addLog('Quiz đúng: +2% thị phần, +4 ảnh hưởng, +10 vốn','good');}
+    else{s.reputation-=5;s.marketShare-=1;addLog('Quiz sai: -5 uy tín, -1% thị phần','bad');}
+  } else if(cat==='lobby'){
+    if(correct){s.influence+=8;s.capital+=10;addLog('Quiz đúng: +8 ảnh hưởng, +10 vốn','good');}
+    else{s.reputation-=8;addLog('Quiz sai: -8 uy tín','bad');}
+  } else if(cat==='green'){
+    if(correct){s.pollution=Math.max(0,s.pollution-8);s.reputation+=5;addLog('Quiz đúng: -8 ô nhiễm, +5 uy tín','good');}
+    else{s.pollution+=5;s.reputation-=4;addLog('Quiz sai: +5 ô nhiễm, -4 uy tín','bad');}
+  }
+  if(quizResolve){quizResolve(correct);quizResolve=null;}
+}
+
+// ============================================================
+// EVENT MODAL
+// ============================================================
+async function showEventModal(ev){
+  return new Promise(resolve=>{
+    eventResolve=resolve;
+    document.getElementById('event-icon').textContent=ev.icon;
+    document.getElementById('event-name').textContent=ev.name;
+    document.getElementById('event-desc').textContent=ev.desc;
+    const efEl=document.getElementById('event-effects');
+    efEl.innerHTML='';
+    const eff=ev.effects;
+    const items=[
+      {l:'Vốn',v:eff.capital,unit:''},
+      {l:'Uy tín',v:eff.rep,unit:''},
+      {l:'Thị phần',v:eff.msPct,unit:'%'},
+      {l:'Công nghệ',v:eff.tech,unit:''},
+      {l:'Ảnh hưởng',v:eff.influence,unit:''},
+      {l:'Can thiệp',v:eff.interventionUp?'+1 giai đoạn':null,unit:'',raw:true}
+    ].filter(x=>x.v!==undefined&&x.v!==null);
+    items.forEach(item=>{
+      const chip=document.createElement('div');
+      chip.className='eff-chip';
+      const pos=item.raw?false:(typeof item.v==='number'?item.v>0:false);
+      const neg=item.raw?false:(typeof item.v==='number'?item.v<0:false);
+      chip.innerHTML=`<div class="el">${item.l}</div><div class="ev" style="color:${pos?'var(--green)':neg?'var(--red)':'rgba(255,255,255,0.7)'}">${item.raw?item.v:(item.v>0?'+':'')+item.v+item.unit}</div>`;
+      efEl.appendChild(chip);
+    });
+    playSfx('event');
+    document.getElementById('event-modal').classList.add('show');
+  });
+}
+
+function closeEventModal(){
+  playSfx('modalClose');
+  document.getElementById('event-modal').classList.remove('show');
+  if(eventResolve){eventResolve();eventResolve=null;}
+}
+
+// ============================================================
+// ENDING
+// ============================================================
+function showEnding(result){
+  stopMusic();
+  playSfx(result.type==='win'?'win':result.type==='lose'?'lose':'neutralEnd');
+  const s=G;
+  const modal=document.getElementById('ending-modal');
+  document.getElementById('ending-icon').textContent=result.icon;
+  const titleEl=document.getElementById('ending-title');
+  titleEl.textContent=result.title;
+  titleEl.className='ending-title '+(result.type==='win'?'ending-win':'ending-lose');
+  document.getElementById('ending-desc').textContent=result.desc;
+  const stats=[
+    {l:'Năm',v:s.calendarYear},
+    {l:'Thị phần',v:s.marketShare.toFixed(1)+'%'},
+    {l:'Vốn',v:s.capital.toFixed(0)},
+    {l:'Công nghệ',v:s.tech},
+    {l:'Uy tín',v:s.reputation.toFixed(0)},
+    {l:'Ảnh hưởng',v:s.influence}
+  ];
+  const statsEl=document.getElementById('ending-stats');
+  statsEl.innerHTML=stats.map(st=>`<div class="ending-stat"><div class="es-label">${st.l}</div><div class="es-val">${st.v}</div></div>`).join('');
+  modal.classList.add('show');
+}
+
+// ============================================================
+// HUD & RENDER
+// ============================================================
+function updateHUD(){
+  const s=G;
+  s.risk=computeRisk();
+
+  document.getElementById('header-company').textContent=s.company.toUpperCase();
+  document.getElementById('year-badge').textContent=s.calendarYear;
+  document.getElementById('sector-badge').textContent=s.sector.icon+' '+s.sector.name+' | '+s.mode.name;
+
+  document.getElementById('stat-capital').textContent=s.capital.toFixed(0);
+  document.getElementById('stat-capital').style.color=s.capital<0?'var(--red)':s.capital<50?'var(--orange)':'#e0e8f0';
+  document.getElementById('stat-debt').textContent=s.debt.toFixed(0);
+  document.getElementById('stat-debt').style.color=s.debt>300?'var(--red)':s.debt>150?'var(--orange)':'#e0e8f0';
+  const ratio=s.capital>0?s.debt/s.capital:s.debt>0?99:0;
+  document.getElementById('stat-ratio').textContent=ratio.toFixed(1)+'x';
+  document.getElementById('stat-ratio').style.color=ratio>2?'var(--red)':ratio>1?'var(--orange)':'#e0e8f0';
+
+  document.getElementById('stat-ms').textContent=s.marketShare.toFixed(1)+'%';
+  document.getElementById('bar-ms').style.width=Math.min(100,s.marketShare)+'%';
+  document.getElementById('stat-rep').textContent=Math.round(s.reputation);
+  document.getElementById('bar-rep').style.width=Math.min(100,s.reputation)+'%';
+  document.getElementById('stat-tech').textContent=Math.round(s.tech);
+  document.getElementById('bar-tech').style.width=Math.min(100,s.tech/1.5)+'%';
+  document.getElementById('stat-pol').textContent=Math.round(s.pollution);
+  document.getElementById('bar-pol').style.width=Math.min(100,s.pollution)+'%';
+  document.getElementById('stat-inf').textContent=Math.round(s.influence);
+
+  // Risk badge
+  const riskBadge=document.getElementById('risk-badge');
+  const riskNames=[['stable','Ổn định'],['watch','Theo dõi'],['pressure','Áp lực'],['danger','Nguy hiểm'],['crisis','Khủng hoảng']];
+  const phaseKey=getRiskPhaseKey(s.risk);
+  const ri=riskNames.findIndex(x=>x[0]===phaseKey);
+  riskBadge.className='risk-badge risk-'+phaseKey;
+  riskBadge.textContent=`⚠ Rủi ro ${s.risk.toFixed(1)} — ${riskNames[ri][1]}`;
+  syncMusicToCurrentPhase();
+
+  // Intervention dots
+  const dotsEl=document.getElementById('stage-dots');
+  dotsEl.innerHTML='';
+  for(let i=0;i<5;i++){
+    const d=document.createElement('div');
+    d.className='stage-dot'+(i<s.interventionStage?' active':'');
+    dotsEl.appendChild(d);
+  }
+  document.getElementById('stage-label').textContent='Giai đoạn '+s.interventionStage+'/5';
+
+  // News ticker
+  const news=getNewsTicker();
+  const tickerEl=document.getElementById('news-ticker');
+  const tickerText='📡 '+news;
+  tickerEl.textContent=tickerText;
+  tickerEl.title=tickerText;
+}
+
+function getNewsTicker(){
+  const s=G;
+  if(s.marketShare>70)return'Ủy ban cạnh tranh cảnh báo tình trạng tập trung quyền lực thị trường';
+  if(s.debt>200)return'Thị trường tín dụng thắt chặt, doanh nghiệp đòn bẩy cao (Nợ/Vốn cao) đối mặt rủi ro';
+  if(s.pollution>50)return'Làn sóng bảo vệ môi trường gây sức ép lên doanh nghiệp phát thải lớn';
+  if(s.tech>40)return'Đổi mới công nghệ giúp doanh nghiệp dẫn đầu nới rộng khoảng cách với đối thủ';
+  if(s.influence>40&&s.reputation<35)return'Bê bối vận động hành lang làm dấy lên tranh cãi về tính minh bạch';
+  if(s.reputation>70)return`${s.company} nhận giải thưởng doanh nghiệp tiêu biểu năm ${s.calendarYear}`;
+  if(s.interventionStage>=2)return`Cơ quan điều tra mở hồ sơ chính thức về ${s.company}`;
+  if(s.capital>500)return`${s.company} công bố lợi nhuận kỷ lục`;
+  return'Thị trường đang theo dõi những bước đi tiếp theo của các tập đoàn lớn';
+}
+
+function renderActions(){
+  const actions=getActions();
+  const grid=document.getElementById('actions-grid');
+  grid.innerHTML='';
+  actions.forEach(a=>{
+    const card=document.createElement('div');
+    card.className='action-card'+(a.available?'':' disabled')+(selectedAction===a.id?' selected':'');
+    card.innerHTML=`<div class="action-icon">${a.icon}</div><div class="action-name">${a.name}</div><div class="action-cost" style="color:${a.id==='borrow'?'var(--green)':'var(--orange)'}">${a.cost}</div><div class="action-desc">${a.desc}</div>`;
+    if(a.available){
+      card.onclick=()=>{
+        if(busy)return;
+        selectedAction=a.id;
+        playSfx('select');
+        renderActions();
+        showForecast(a);
+      };
+    }
+    grid.appendChild(card);
+  });
+}
+
+function showForecast(action){
+  const fp=document.getElementById('forecast-panel');
+  const d=forecastAction(action.id);
+  const items=[
+    {l:'Vốn',v:d.capital,unit:''},
+    {l:'Thị phần',v:d.marketShare,unit:'%'},
+    {l:'Uy tín',v:d.reputation,unit:''},
+    {l:'Công nghệ',v:d.tech,unit:''},
+    {l:'Ô nhiễm',v:d.pollution,unit:''},
+    {l:'Ảnh hưởng',v:d.influence,unit:''},
+    {l:'Nợ',v:d.debt,unit:''}
+  ].filter(x=>x.v!==0);
+
+  fp.style.display='block';
+  fp.innerHTML=`<div class="forecast-title">📊 Dự báo tác động — ${action.name}</div>
+  <div class="forecast-grid">
+    ${items.map(x=>{
+      const pos=x.v>0;
+      const neg=x.v<0;
+      // For debt and pollution, higher is bad
+      const goodColor=(x.l==='Nợ'||x.l==='Ô nhiễm')?'var(--red)':'var(--green)';
+      const badColor=(x.l==='Nợ'||x.l==='Ô nhiễm')?'var(--green)':'var(--red)';
+      const color=pos?goodColor:neg?badColor:'rgba(255,255,255,0.5)';
+      return`<div class="forecast-item"><div class="fi-label">${x.l}</div><div class="fi-val" style="color:${color}">${x.v>0?'+':''}${x.v}${x.unit}</div></div>`;
+    }).join('')}
+  </div>
+  <button class="confirm-btn" onclick="confirmAction()">✅ Xác nhận hành động này</button>`;
+
+  requestAnimationFrame(()=>{
+    const confirmBtn=fp.querySelector('.confirm-btn');
+    if(confirmBtn){
+      confirmBtn.scrollIntoView({behavior:'smooth',block:'nearest'});
+      try{confirmBtn.focus({preventScroll:true});}catch(_){}
+    }else{
+      fp.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+  });
+}
+
+async function confirmAction(){
+  if(!selectedAction||busy)return;
+  playSfx('confirm');
+  busy=true;
+  const action=getActions().find(a=>a.id===selectedAction);
+  if(!action||!action.available){busy=false;return;}
+
+  document.getElementById('forecast-panel').style.display='none';
+
+  // Do action
+  await doAction(selectedAction);
+
+  // Quiz
+  if(action.quizCat){
+    await showQuiz(action.quizCat,action.name);
+  }
+
+  // Risk recompute
+  G.risk=computeRisk();
+
+  // Intervention check
+  checkIntervention();
+
+  // Event
+  const ev=tryTriggerEvent();
+  if(ev){
+    applyEvent(ev);
+    addLog(ev.icon+' '+ev.name,'event');
+    await showEventModal(ev);
+  }
+
+  // End of year passives
+  endYearPassive();
+
+  // Year advance
+  G.year++;G.calendarYear++;
+
+  // Win/loss check
+  const result=checkWinLoss();
+  if(result){
+    G.over=true;
+    updateHUD();
+    setTimeout(()=>showEnding(result),300);
+    busy=false;
+    return;
+  }
+
+  // Reset selection
+  selectedAction=null;
+  updateHUD();
+  renderActions();
+
+  const centerPanel=document.querySelector('.center-panel');
+  if(centerPanel){
+    centerPanel.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  playSfx('year');
+  showToast(`Năm ${G.calendarYear} bắt đầu!`,'normal');
+  busy=false;
+}
+
+// ============================================================
+// LOG
+// ============================================================
+function addLog(text,type='normal'){
+  const container=document.getElementById('log-container');
+  if(!container)return;
+  G.log.push({text,type});
+  const el=document.createElement('div');
+  el.className='log-entry log-'+type;
+  el.textContent=text;
+  container.insertBefore(el,container.firstChild);
+  // Keep max 50 entries
+  while(container.children.length>50)container.removeChild(container.lastChild);
+}
+
+function addMilestone(text){addLog('🏆 '+text,'milestone');}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg,type='normal'){
+  const container=document.getElementById('toast-container');
+  const toast=document.createElement('div');
+  toast.className='toast '+(type==='good'?'good':type==='bad'?'bad':type==='warn'?'warn':'');
+  toast.textContent=msg;
+  container.appendChild(toast);
+  setTimeout(()=>{
+    toast.style.animation='toastOut .3s ease forwards';
+    setTimeout(()=>toast.remove(),300);
+  },3000);
+}
+
+// ============================================================
+// SETUP
+// ============================================================
+let setupSector=null;
+let setupMode=null;
+
+function showSetup(){
+  playSfx('click');
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('setup-screen').classList.remove('hidden');
+
+  // Render sectors
+  const sg=document.getElementById('sector-grid');
+  sg.innerHTML='';
+  SECTORS.forEach(s=>{
+    const c=document.createElement('div');
+    c.className='choice-card';
+    c.innerHTML=`<div class="icon">${s.icon}</div><div class="name">${s.name}</div><div class="desc">${s.desc}</div>`;
+    c.onclick=()=>{
+      setupSector=s.id;
+      sg.querySelectorAll('.choice-card').forEach(x=>x.classList.remove('selected'));
+      c.classList.add('selected');
+      playSfx('select');
+      checkSetupReady();
+    };
+    sg.appendChild(c);
+  });
+
+  // Render modes
+  const mg=document.getElementById('mode-grid');
+  mg.innerHTML='';
+  MODES.forEach(m=>{
+    const c=document.createElement('div');
+    c.className='choice-card';
+    c.innerHTML=`<div class="icon">${m.icon}</div><div class="name">${m.name}</div><div class="desc">${m.desc}</div>`;
+    c.onclick=()=>{
+      setupMode=m.id;
+      mg.querySelectorAll('.choice-card').forEach(x=>x.classList.remove('selected'));
+      c.classList.add('selected');
+      playSfx('select');
+      checkSetupReady();
+    };
+    mg.appendChild(c);
+  });
+}
+
+function checkSetupReady(){
+  const name=document.getElementById('company-name').value.trim();
+  document.getElementById('play-btn').disabled=!(name&&setupSector&&setupMode);
+}
+
+function startGame(){
+  ensureAudio();
+  initMusic();
+  playSfx('start');
+  const name=document.getElementById('company-name').value.trim()||'Tập Đoàn Mới';
+  initState(name,setupSector,setupMode);
+  document.getElementById('setup-screen').classList.add('hidden');
+  const gs=document.getElementById('game-screen');
+  gs.classList.add('active');
+  updateHUD();
+  renderActions();
+  syncMusicToCurrentPhase();
+  addLog(`🚀 ${name} chính thức ra mắt thị trường năm 2026!`,'milestone');
+  addLog(`Lĩnh vực: ${G.sector.name} | Chế độ: ${G.mode.name}`,'normal');
+  showToast('Sự nghiệp bắt đầu! Chúc may mắn 🎯','good');
+}
+</script>
+</body>
+</html>
