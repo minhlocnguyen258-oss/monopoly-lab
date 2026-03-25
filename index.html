@@ -1696,21 +1696,21 @@ function checkIntervention(){
 
   if(s.interventionStage===0){
     const thresh=65*mt*(ats<=1.2?1:0.85);
-    if(s.marketShare>thresh&&s.risk>3.5){
+    if(s.marketShare>thresh&&s.risk>2.5){
       s.interventionStage=1;
       addLog('👁️ Giai đoạn 1: Cơ quan phụ trách bắt đầu giám sát!','bad');
       playSfx('alert');
       showToast('Nhà nước bắt đầu giám sát!','warn');
     }
   } else if(s.interventionStage===1){
-    if(s.marketShare>80*mt&&s.risk>5){
+    if(s.marketShare>80*mt&&s.risk>4){
       s.interventionStage=2;s.reputation=Math.max(0,s.reputation-10);
       addLog('🔍 Giai đoạn 2: Điều tra chính thức, -10 uy tín!','bad');
       playSfx('alert');
       showToast('Bị điều tra chính thức!','bad');
     }
   } else if(s.interventionStage===2){
-    if(s.risk>7){
+    if(s.risk>6){
       s.interventionStage=3;s.capital-=80;
       s.marketShare=Math.max(0,s.marketShare*0.9);
       addLog('💥 Giai đoạn 3: Phạt nặng! -80 vốn, -10% thị phần','bad');
